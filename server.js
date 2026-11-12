@@ -113,4 +113,5 @@ app.post('/api/bets', (req, res) => {
   }
 });
 
-app.listen(4000, () => console.log('Multi-Sport Backend running on http://localhost:4000'));
+const PORT = process.env.PORT || 4000;
+app.listen(PORT, () => console.log(`Pro Trading Engine running on port ${PORT}`));
