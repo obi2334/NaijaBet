@@ -112,5 +112,58 @@ app.post('/api/bets', (req, res) => {
     res.status(409).json({ error: err.message });
   }
 });
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
-app.listen(4000, () => console.log('Multi-Sport Backend running on http://localhost:4000'));
+const JWT_SECRET = process.env.JWT_SECRET || 'naijabet_super_secret_key_2026';
+
+// Users table check/creation
+db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    username TEXT UNIQUE,
+    password_hash TEXT,
+    balance INTEGER DEFAULT 0
+  );
+`);
+
+// Register Endpoint
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password are required' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const userId = crypto.randomUUID();
+
+    db.prepare('INSERT INTO users (id, username, password_hash, balance) VALUES (?, ?, ?, ?)').run(
+      userId, username, hashedPassword, 5000000
+    );
+
+    const token = jwt.sign({ userId, username }, JWT_SECRET, { expiresIn: '7d' });
+    res.status(201).json({ token, userId, username, balance: 5000000 });
+  } catch (err) {
+    res.status(400).json({ error: 'Username already taken or invalid data' });
+  }
+});
+
+// Login Endpoint
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username);
+
+    if (!user || !(await bcrypt.compare(password, user.password_hash))) {
+      return res.status(401).json({ error: 'Invalid username or password' });
+    }
+
+    const token = jwt.sign({ userId: user.id, username: user.username }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ token, userId: user.id, username: user.username, balance: user.balance });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+const PORT = process.env.PORT || 4000;
+app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
