@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 import cors from 'cors';
 import crypto from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
@@ -39,13 +39,23 @@ const fixtureEvents = [
   ['22222222-2222-2222-2222-222222222226','Tennis','WTA Tour','Iga Swiatek','Aryna Sabalenka',2],
   ['22222222-2222-2222-2222-222222222227','Table Tennis','TT Elite Series','K. Duda','T. Moregard',0.5],
   ['22222222-2222-2222-2222-222222222228','Esports','CS2 Major','Natus Vincere','FaZe Clan',6],
+  ['22222222-2222-2222-2222-222222222229','Football','English Premier League','Arsenal','Manchester City',7],
 ];
 const addEvent = db.prepare("INSERT OR IGNORE INTO events (id,sport,league,home_team,away_team,kickoff_time,status) VALUES (?,?,?,?,?,datetime('now',?), 'UPCOMING')");
 for (const [id,sport,league,home,away,hours] of fixtureEvents) addEvent.run(id,sport,league,home,away,`+${hours} hours`);
 const fixtureOdds = [2.45,3.4,2.75,1.95,3.6,3.8,2.15,1.72,1.85,1.95,1.88,1.92,1.65,2.25,1.78,2.02,1.8,2.0];
 const fixtureSelections = ['HOME','DRAW','AWAY','HOME','DRAW','AWAY','1 (HOME)','2 (AWAY)','1 (HOME)','2 (AWAY)','1','2','1','2','1','2','1','2'];
 const fixtureMarket = ['1X2','1X2','1X2','1X2','1X2','1X2','Moneyline','Moneyline','Moneyline','Moneyline','Match Winner','Match Winner','Match Winner','Match Winner','Match Winner','Match Winner','Match Winner','Match Winner'];
-const addOutcome = db.prepare('INSERT OR IGNORE INTO outcomes (id,event_id,market_name,selection_name,odds,is_suspended) VALUES (?,?,?,?,?,0)');
+for (let i = 0; i < fixtureOdds.length; i++) {
+  const eventPair = fixtureEvents[Math.floor(i / 2)] || ['Fallback Event'];
+  addOutcome.run(
+    `33333333-3333-3333-3333-${String(333333333331 + i).slice(-12)}`,
+    eventPair[0],
+    fixtureMarket[i],
+    fixtureSelections[i],
+    fixtureOdds[i]
+  );
+}
 for (let i=0;i<fixtureOdds.length;i++) addOutcome.run(`33333333-3333-3333-3333-${String(333333333331+i).slice(-12)}`,fixtureEvents[Math.floor(i/2)][0],fixtureMarket[i],fixtureSelections[i],fixtureOdds[i]);
 
 const walletFor = (id) => db.prepare('SELECT balance FROM wallets WHERE user_id = ?').get(id);
