@@ -2,8 +2,9 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-const USER_ID = '11111111-1111-1111-1111-111111111111';
-const API_BASE = 'https://naijabet-production.up.railway.app';
+const API_BASE = import.meta.env.VITE_API_BASE || '';
+const AUTH_KEY = 'naijabet-token';
+const authHeaders = () => ({ Authorization: `Bearer ${localStorage.getItem(AUTH_KEY) || ''}` });
 
 /* Full-Color Realistic Sport Emblems */
 const SportLogo = ({ name, className = 'w-4 h-4' }) => {
@@ -224,9 +225,8 @@ const useBetSlipStore = create(
         try {
           const res = await fetch(`${API_BASE}/api/bets`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', ...authHeaders() },
             body: JSON.stringify({
-              userId: USER_ID,
               stake: stakeMinorUnits,
               selections: selections.map((s) => ({
                 outcomeId: s.outcomeId,
@@ -259,37 +259,91 @@ export default function App() {
   const [bookingInput, setBookingInput] = useState('');
   const [generatedCode, setGeneratedCode] = useState('');
   const [mobileSlipOpen, setMobileSlipOpen] = useState(false);
+  const [token, setToken] = useState(() => localStorage.getItem(AUTH_KEY) || '');
+  const [email, setEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authMode, setAuthMode] = useState('login');
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authError, setAuthError] = useState('');
+  const [depositOpen, setDepositOpen] = useState(false);
+  const [depositAmount, setDepositAmount] = useState('50');
+  const [depositError, setDepositError] = useState('');
+  const [depositBusy, setDepositBusy] = useState(false);
+  const [paymentNotice, setPaymentNotice] = useState('');
 
   const {
     selections, stake, isSubmitting, error, lastReceipt,
     setSelections, toggleSelection, removeSelection, clearSlip, setStake, placeBet,
   } = useBetSlipStore();
 
-  const loadData = () => {
-    fetch(`${API_BASE}/api/events`).then((r) => r.json()).then(setEvents);
-    fetch(`${API_BASE}/api/wallet/${USER_ID}`).then((r) => r.json()).then((w) => setBalanceKobo(Number(w.balance)));
-    fetch(`${API_BASE}/api/bets/${USER_ID}`).then((r) => r.json()).then(setMyBets);
+  const loadData = (session = token) => {
+    fetch(`${API_BASE}/api/events`).then((r) => r.json()).then(setEvents).catch(() => {});
+    if (!session) { setBalanceKobo(0); setMyBets([]); return; }
+    const headers = { Authorization: `Bearer ${session}` };
+    fetch(`${API_BASE}/api/wallet`, { headers }).then((r) => r.ok ? r.json() : Promise.reject()).then((w) => setBalanceKobo(Number(w.balanceKobo ?? w.balance))).catch(() => {});
+    fetch(`${API_BASE}/api/bets`, { headers }).then((r) => r.ok ? r.json() : Promise.reject()).then(setMyBets).catch(() => {});
   };
 
   useEffect(() => {
     loadData();
   }, []);
 
-  const handleDeposit = async () => {
-    const res = await fetch(`${API_BASE}/api/wallet/${USER_ID}/deposit`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amount: 5000000 }),
-    });
-    const data = await res.json();
-    setBalanceKobo(Number(data.balance));
+  useEffect(() => {
+    const reference = new URLSearchParams(window.location.search).get('reference');
+    if (!token || !reference) return undefined;
+    let attempts = 0;
+    const check = async () => {
+      attempts += 1;
+      try {
+        const response = await fetch(`${API_BASE}/api/wallet/deposits/${encodeURIComponent(reference)}`, { headers: { Authorization: `Bearer ${token}` } });
+        const deposit = await response.json();
+        if (deposit.status === 'SUCCESS') { setPaymentNotice('Deposit confirmed. Your wallet has been updated.'); loadData(token); window.history.replaceState({}, '', window.location.pathname); clearInterval(timer); }
+        else if (deposit.status === 'FAILED') { setPaymentNotice('The deposit was not confirmed. If you were charged, contact support with your payment reference.'); clearInterval(timer); }
+      } catch { /* Retry briefly while the payment provider sends its confirmation. */ }
+      if (attempts >= 20) {
+        setPaymentNotice('Your payment is still being confirmed. Reopen the app or sign in again shortly to refresh your wallet.');
+        clearInterval(timer);
+      }
+    };
+    const timer = setInterval(check, 2500);
+    check();
+    return () => clearInterval(timer);
+  }, [token]);
+
+  const handleAuth = async (event) => {
+    event.preventDefault(); setAuthError('');
+    try {
+      const response = await fetch(`${API_BASE}/api/auth/${authMode === 'register' ? 'register' : 'login'}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password: authPassword }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Could not sign in.');
+      localStorage.setItem(AUTH_KEY, data.token); setToken(data.token); setBalanceKobo(Number(data.balance || 0));
+      setAuthOpen(false); setAuthPassword(''); loadData(data.token);
+    } catch (err) { setAuthError(err.message); }
+  };
+
+  const handleDeposit = async (event) => {
+    event.preventDefault(); setDepositError('');
+    const amount = Number(depositAmount);
+    if (!Number.isSafeInteger(amount) || amount < 50) { setDepositError('Minimum deposit is ₦50.'); return; }
+    if (!token) { setDepositOpen(false); setAuthMode('login'); setAuthOpen(true); return; }
+    setDepositBusy(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/wallet/deposits`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ amount }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Could not start deposit.');
+      window.location.assign(data.checkoutUrl);
+    } catch (err) { setDepositError(err.message); setDepositBusy(false); }
   };
 
   const handleGenerateCode = async () => {
     const res = await fetch(`${API_BASE}/api/booking-codes`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ outcomeIds: selections.map((s) => s.outcomeId) }),
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ selections }),
     });
     const data = await res.json();
     if (data.code) setGeneratedCode(data.code);
@@ -297,7 +351,7 @@ export default function App() {
 
   const handleLoadCode = async () => {
     if (!bookingInput.trim()) return;
-    const res = await fetch(`${API_BASE}/api/booking-codes/${bookingInput.trim()}`);
+    const res = await fetch(`${API_BASE}/api/booking-codes/${bookingInput.trim()}`, { headers: authHeaders() });
     const data = await res.json();
     if (res.ok && data.selections) {
       setSelections(data.selections);
@@ -501,12 +555,12 @@ export default function App() {
   );
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-[#0b0e14] text-slate-200 antialiased">
+      <div className="bet-app flex h-dvh flex-col overflow-hidden text-slate-200 antialiased">
       {/* Top Bar */}
       <header className="flex h-13 shrink-0 items-center justify-between border-b border-white/[0.08] bg-[#11151e] px-3.5 sm:px-4">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-emerald-600 text-xs font-extrabold tracking-tight text-white">
+            <div className="brand-mark flex h-8 w-8 items-center justify-center rounded-lg text-xs font-extrabold tracking-tight text-white">
               NB
             </div>
             <span className="text-sm font-extrabold tracking-tight text-white">
@@ -545,17 +599,22 @@ export default function App() {
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex items-center rounded-md border border-white/[0.1] bg-[#0b0e14] text-xs">
+          <div className="wallet-pill flex items-center rounded-lg border border-white/[0.1] text-xs">
             <span className="px-2.5 sm:px-3 py-1.5 font-semibold text-white tabular-nums">
               NGN {(balanceKobo / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </span>
             <button
-              onClick={handleDeposit}
-              className="rounded-r-md bg-emerald-600 px-3 py-1.5 font-semibold text-white hover:bg-emerald-500 transition"
+              onClick={() => { setDepositError(''); setDepositOpen(true); }}
+              className="deposit-button rounded-r-lg px-3.5 py-2 font-bold text-white transition"
             >
               Deposit
             </button>
           </div>
+          {token ? (
+            <button onClick={() => { localStorage.removeItem(AUTH_KEY); setToken(''); setBalanceKobo(0); setMyBets([]); }} className="hidden sm:inline-flex rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-white/5">Sign out</button>
+          ) : (
+            <button onClick={() => { setAuthMode('login'); setAuthOpen(true); }} className="rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-white/5">Sign in</button>
+          )}
         </div>
       </header>
 
@@ -629,7 +688,18 @@ export default function App() {
         </aside>
 
         {/* CENTER WORKSPACE */}
-        <main className="flex-1 overflow-y-auto p-3 sm:p-4 pb-20 lg:pb-4 space-y-3.5">
+        <main className="sports-main flex-1 overflow-y-auto p-3 sm:p-4 pb-20 lg:pb-4 space-y-3.5">
+          <section className="sports-hero relative overflow-hidden rounded-2xl border border-emerald-400/20 px-5 py-5 sm:px-7 sm:py-6">
+            <div className="relative z-10 max-w-xl">
+              <p className="mb-2 flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.22em] text-emerald-300"><span className="live-dot h-2 w-2 rounded-full bg-emerald-400" /> NaijaBet • Sportsbook</p>
+              <h1 className="text-2xl font-black tracking-tight text-white sm:text-3xl">Make every match <span className="text-emerald-300">count.</span></h1>
+              <p className="mt-2 max-w-lg text-xs leading-5 text-slate-300 sm:text-sm">Live odds, big fixtures and your bet slip in one place. Add funds securely from ₦50.</p>
+              <button onClick={() => token ? setDepositOpen(true) : (setAuthMode('register'), setAuthOpen(true))} className="mt-4 rounded-lg bg-emerald-400 px-4 py-2.5 text-xs font-extrabold text-[#062015] transition hover:bg-emerald-300">{token ? 'Fund your wallet' : 'Create your account'}</button>
+            </div>
+            <div aria-hidden="true" className="hero-ball absolute -right-5 -top-16 h-64 w-64 rounded-full border-[24px] border-white/[0.04] sm:right-12 sm:h-80 sm:w-80" />
+            <div aria-hidden="true" className="absolute -right-1 bottom-0 h-32 w-64 bg-gradient-to-t from-emerald-400/10 to-transparent" />
+          </section>
+          {paymentNotice && <button onClick={() => setPaymentNotice('')} className="w-full rounded-lg border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-left text-xs text-emerald-100">{paymentNotice}<span className="float-right text-emerald-300">Dismiss ×</span></button>}
           <div className="lg:hidden">
             <input
               type="text"
@@ -640,7 +710,7 @@ export default function App() {
             />
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-white/[0.08] bg-[#131822] px-3.5 py-2.5 sm:px-4 sm:py-3">
+          <div className="promo-card flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3.5 py-2.5 sm:px-4 sm:py-3">
             <div className="space-y-0.5">
               <div className="flex items-center gap-2">
                 <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-300">
@@ -902,6 +972,26 @@ export default function App() {
           <span>My Bets ({myBets.length})</span>
         </button>
       </nav>
+
+      {authOpen && (
+        <div className="modal-backdrop fixed inset-0 z-[70] flex items-center justify-center p-4" onClick={() => setAuthOpen(false)}>
+          <section role="dialog" aria-modal="true" aria-labelledby="auth-title" className="modal-card w-full max-w-md rounded-2xl border border-white/10 p-6 shadow-2xl" onClick={(event) => event.stopPropagation()}>
+            <div className="mb-5 flex items-start justify-between"><div><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-300">NaijaBet account</p><h2 id="auth-title" className="mt-1 text-xl font-extrabold text-white">{authMode === 'register' ? 'Create your account' : 'Welcome back'}</h2></div><button onClick={() => setAuthOpen(false)} className="text-xl leading-none text-slate-400 hover:text-white">×</button></div>
+            <form onSubmit={handleAuth} className="space-y-3"><label className="block text-xs font-semibold text-slate-300">Email address<input autoComplete="email" type="email" required value={email} onChange={(event) => setEmail(event.target.value)} className="form-field mt-1.5 w-full rounded-lg border px-3 py-3 text-sm text-white outline-none" placeholder="you@example.com" /></label><label className="block text-xs font-semibold text-slate-300">Password<input autoComplete={authMode === 'register' ? 'new-password' : 'current-password'} type="password" minLength={8} required value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} className="form-field mt-1.5 w-full rounded-lg border px-3 py-3 text-sm text-white outline-none" placeholder="At least 8 characters" /></label>{authError && <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-200">{authError}</p>}<button className="deposit-button w-full rounded-lg py-3 text-sm font-bold text-white">{authMode === 'register' ? 'Create account' : 'Sign in'}</button></form>
+            <p className="mt-4 text-center text-xs text-slate-400">{authMode === 'register' ? 'Already have an account?' : 'New to NaijaBet?'} <button onClick={() => { setAuthError(''); setAuthMode(authMode === 'register' ? 'login' : 'register'); }} className="font-bold text-emerald-300">{authMode === 'register' ? 'Sign in' : 'Create an account'}</button></p>
+          </section>
+        </div>
+      )}
+
+      {depositOpen && (
+        <div className="modal-backdrop fixed inset-0 z-[70] flex items-center justify-center p-4" onClick={() => !depositBusy && setDepositOpen(false)}>
+          <section role="dialog" aria-modal="true" aria-labelledby="deposit-title" className="modal-card w-full max-w-md rounded-2xl border border-white/10 p-6 shadow-2xl" onClick={(event) => event.stopPropagation()}>
+            <div className="mb-5 flex items-start justify-between"><div><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-300">Wallet • NGN</p><h2 id="deposit-title" className="mt-1 text-xl font-extrabold text-white">Add funds</h2></div><button disabled={depositBusy} onClick={() => setDepositOpen(false)} className="text-xl leading-none text-slate-400 hover:text-white">×</button></div>
+            <div className="mb-4 rounded-xl border border-white/10 bg-white/[0.03] p-3 text-xs text-slate-300">Available balance <strong className="float-right text-white">₦{(balanceKobo / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}</strong></div>
+            <form onSubmit={handleDeposit} className="space-y-4"><label className="block text-xs font-semibold text-slate-300">Deposit amount<input type="number" min="50" step="1" required value={depositAmount} onChange={(event) => setDepositAmount(event.target.value)} className="form-field mt-1.5 w-full rounded-lg border px-3 py-3 text-lg font-bold text-white outline-none" /><span className="mt-1 block text-[11px] text-slate-500">Minimum deposit ₦50 • Whole naira only</span></label><div className="grid grid-cols-3 gap-2">{[500, 1000, 5000].map((value) => <button type="button" key={value} onClick={() => setDepositAmount(String(value))} className="quick-amount rounded-lg border px-2 py-2 text-xs font-bold">₦{value.toLocaleString('en-NG')}</button>)}</div>{depositError && <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-200">{depositError}</p>}<button disabled={depositBusy} className="deposit-button w-full rounded-lg py-3 text-sm font-bold text-white disabled:opacity-60">{depositBusy ? 'Connecting to secure checkout…' : 'Continue to payment'}</button><p className="text-center text-[10px] text-slate-500">Secure checkout powered by Paystack. Funds are added after payment confirmation.</p></form>
+          </section>
+        </div>
+      )}
     </div>
   );
 }
