@@ -1,0 +1,2 @@
+# NaijaBet
+Betting site
