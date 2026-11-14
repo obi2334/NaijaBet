@@ -311,16 +311,37 @@ export default function App() {
   }, [token]);
 
   const handleAuth = async (event) => {
-    event.preventDefault(); setAuthError('');
+    event.preventDefault(); 
+    setAuthError('');
+    
     try {
       const response = await fetch(`${API_BASE}/api/auth/${authMode === 'register' ? 'register' : 'login'}`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password: authPassword }),
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ email, password: authPassword }),
       });
+
+      // Check if the response is actually JSON before parsing
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        const errorText = await response.text();
+        console.error("Non-JSON server response:", errorText);
+        throw new Error("Server returned an invalid response format. Check your API route or backend server.");
+      }
+
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Could not sign in.');
-      localStorage.setItem(AUTH_KEY, data.token); setToken(data.token); setBalanceKobo(Number(data.balance || 0));
-      setAuthOpen(false); setAuthPassword(''); loadData(data.token);
-    } catch (err) { setAuthError(err.message); }
+      
+      localStorage.setItem(AUTH_KEY, data.token); 
+      setToken(data.token); 
+      setBalanceKobo(Number(data.balance || 0));
+      setAuthOpen(false); 
+      setAuthPassword(''); 
+      loadData(data.token);
+      
+    } catch (err) { 
+      setAuthError(err.message); 
+    }
   };
 
   const handleDeposit = async (event) => {
