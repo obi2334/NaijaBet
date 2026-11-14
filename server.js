@@ -39,6 +39,7 @@ const fixtureEvents = [
   ['22222222-2222-2222-2222-222222222226','Tennis','WTA Tour','Iga Swiatek','Aryna Sabalenka',2],
   ['22222222-2222-2222-2222-222222222227','Table Tennis','TT Elite Series','K. Duda','T. Moregard',0.5],
   ['22222222-2222-2222-2222-222222222228','Esports','CS2 Major','Natus Vincere','FaZe Clan',6],
+  ['22222222-2222-2222-2222-222222222229','Football','English Premier League','Arsenal','Manchester City',7],
 ];
 const addEvent = db.prepare("INSERT OR IGNORE INTO events (id,sport,league,home_team,away_team,kickoff_time,status) VALUES (?,?,?,?,?,datetime('now',?), 'UPCOMING')");
 for (const [id,sport,league,home,away,hours] of fixtureEvents) addEvent.run(id,sport,league,home,away,`+${hours} hours`);
