@@ -68,3 +68,22 @@ button:focus-visible, input:focus-visible { outline: 2px solid #4da4ff; outline-
   .sports-main { background: #162a37; }
   .sports-hero { border-radius: 12px !important; }
 }
+
+.welcome-screen { background: radial-gradient(ellipse at 50% 45%, rgba(28, 91, 138, .28), transparent 52%), rgba(5, 14, 21, .96); backdrop-filter: blur(12px); }
+.welcome-frame { min-height: min(620px, calc(100dvh - 32px)); border-color: rgba(119, 176, 215, .2); background: linear-gradient(115deg, #0e202b 0%, #102735 55%, #112d40 100%); box-shadow: 0 32px 100px rgba(0,0,0,.58); }
+.welcome-copy { background: linear-gradient(115deg, rgba(12, 28, 38, .98), rgba(14, 34, 47, .94)); }
+.welcome-brand-mark { background: linear-gradient(135deg, #288ff5, #125bac); box-shadow: 0 10px 28px rgba(23, 117, 203, .28); }
+.welcome-highlight { color: #73bdff; }
+.welcome-primary { background: linear-gradient(135deg, #258cf4, #1265c4); box-shadow: 0 10px 24px rgba(17, 106, 199, .24); transition: transform .18s ease, filter .18s ease; }
+.welcome-primary:hover { transform: translateY(-1px); filter: brightness(1.12); }
+.welcome-secondary { border: 1px solid rgba(161, 202, 232, .25); background: rgba(255,255,255,.045); transition: background .18s ease, border-color .18s ease; }
+.welcome-secondary:hover { border-color: rgba(123, 191, 241, .55); background: rgba(83, 163, 225, .12); }
+.welcome-art { background: radial-gradient(ellipse at 52% 42%, rgba(46, 128, 186, .28), transparent 36%), linear-gradient(155deg, #173b53, #102838 72%); }
+.welcome-stadium-lines { opacity: .44; background: repeating-linear-gradient(168deg, transparent 0 42px, rgba(128, 196, 238, .075) 43px 44px, transparent 45px 84px); mask-image: linear-gradient(180deg, transparent, #000 20%, #000 78%, transparent); }
+.welcome-orbit { border: 1px solid rgba(139, 203, 243, .2); box-shadow: 0 0 0 28px rgba(123, 189, 229, .035), 0 0 0 58px rgba(123, 189, 229, .025), inset 0 0 65px rgba(39, 131, 197, .14); }
+.welcome-ball-wrap { background: radial-gradient(circle at 35% 28%, rgba(255,255,255,.2), rgba(67, 149, 203, .11) 34%, rgba(6, 24, 35, .32) 72%); box-shadow: 0 25px 80px rgba(0,0,0,.32), 0 0 70px rgba(63, 156, 216, .2); }
+.welcome-sport-chip { border: 1px solid rgba(172, 211, 236, .2); background: rgba(9, 28, 40, .62); backdrop-filter: blur(8px); }
+
+@media (min-width: 1024px) {
+  .welcome-art { border-left: 1px solid rgba(150, 194, 222, .12); }
+}
