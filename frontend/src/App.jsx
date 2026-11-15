@@ -155,14 +155,15 @@ const REAL_CLUB_LOGOS = {
   'Lube Civitanova': { bg: '#dc2626', code: 'LUB' },
 };
 
-const ClubLogo = ({ name }) => {
+const ClubLogo = ({ name, size = 'small' }) => {
+  const isLarge = size === 'large';
   const [imgFailed, setImgFailed] = useState(false);
   const cfg = REAL_CLUB_LOGOS[name] || { bg: '#1e293b', code: name.slice(0, 3).toUpperCase() };
 
   if (cfg.url && !imgFailed) {
     return (
-      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/[0.08] p-0.5" title={name}>
-        <img src={cfg.url} alt={name} onError={() => setImgFailed(true)} className="h-5 w-5 object-contain" />
+      <div className={`flex shrink-0 items-center justify-center rounded-full bg-white/[0.08] p-0.5 ${isLarge ? 'h-11 w-11' : 'h-6 w-6'}`} title={name}>
+        <img src={cfg.url} alt={name} onError={() => setImgFailed(true)} className={`${isLarge ? 'h-10 w-10' : 'h-5 w-5'} object-contain`} />
       </div>
     );
   }
@@ -170,7 +171,7 @@ const ClubLogo = ({ name }) => {
   return (
     <span
       style={{ backgroundColor: cfg.bg }}
-      className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/15 text-[8px] font-bold text-white"
+      className={`inline-flex shrink-0 items-center justify-center rounded-full border border-white/15 font-bold text-white ${isLarge ? 'h-11 w-11 text-[11px]' : 'h-6 w-6 text-[8px]'}`}
       title={name}
     >
       {cfg.code}
@@ -724,7 +725,7 @@ export default function App() {
               const hasScore = ev.homeScore !== null && ev.homeScore !== undefined && ev.awayScore !== null && ev.awayScore !== undefined;
               return <article className="home-event-card rounded-2xl border p-3.5 sm:p-4" key={ev.id}>
                 <div className="mb-4 flex items-center justify-between"><span className="truncate pr-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-100/75">{ev.league}</span><span className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-extrabold ${ev.isLive === 1 ? 'home-live-label' : 'home-upcoming-label'}`}>{ev.isLive === 1 ? `● ${ev.matchClock || 'LIVE'}` : new Date(ev.kickoffTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></div>
-                <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-center"><div className="flex min-w-0 flex-col items-center gap-2"><ClubLogo name={ev.homeTeam} /><span className="w-full truncate text-[11px] font-bold text-white sm:text-xs">{ev.homeTeam}</span></div><div className="home-score-box rounded-xl px-3 py-2 text-center"><strong className="block text-lg font-black tabular-nums text-white">{hasScore ? `${ev.homeScore} : ${ev.awayScore}` : 'VS'}</strong><span className="block text-[8px] font-semibold uppercase tracking-wide text-slate-400">{ev.isLive === 1 ? 'Live score' : 'Match winner'}</span></div><div className="flex min-w-0 flex-col items-center gap-2"><ClubLogo name={ev.awayTeam} /><span className="w-full truncate text-[11px] font-bold text-white sm:text-xs">{ev.awayTeam}</span></div></div>
+                <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-center"><div className="flex min-w-0 flex-col items-center gap-2"><ClubLogo name={ev.homeTeam} size="large" /><span className="w-full truncate text-[11px] font-bold text-white sm:text-xs">{ev.homeTeam}</span></div><div className="home-score-box rounded-xl px-3 py-2 text-center"><strong className="block text-lg font-black tabular-nums text-white">{hasScore ? `${ev.homeScore} : ${ev.awayScore}` : 'VS'}</strong><span className="block text-[8px] font-semibold uppercase tracking-wide text-slate-400">{ev.isLive === 1 ? 'Live score' : 'Match winner'}</span></div><div className="flex min-w-0 flex-col items-center gap-2"><ClubLogo name={ev.awayTeam} size="large" /><span className="w-full truncate text-[11px] font-bold text-white sm:text-xs">{ev.awayTeam}</span></div></div>
                 <div className="mt-4 grid grid-cols-3 gap-1.5">{cardOutcomes.map((out) => { const active = selections.some((selection) => selection.outcomeId === out.id); return <button key={out.id} disabled={out.isSuspended === 1} onClick={() => toggleSelection({ eventId: ev.id, matchName: `${ev.homeTeam} vs ${ev.awayTeam}`, outcomeId: out.id, marketName: out.marketName, selectionName: out.selectionName, odds: out.odds })} className={`home-event-odd disabled:opacity-50 flex min-w-0 flex-col items-center rounded-lg border py-2 text-[10px] tabular-nums transition ${active ? 'home-event-odd-active' : ''}`}><span className="truncate text-slate-400">{out.selectionName}</span><strong className="mt-0.5 text-xs text-white">{Number(out.odds).toFixed(2)}</strong></button>; })}</div>
                 {cardOutcomes.length === 0 && <p className="mt-4 rounded-lg bg-black/15 px-3 py-2 text-center text-[10px] text-slate-400">Markets coming soon</p>}
               </article>;
@@ -823,11 +824,11 @@ export default function App() {
 
                                   <div className="space-y-1.5 text-xs min-w-0">
                                     <div className="flex items-center gap-2">
-                                      <ClubLogo name={ev.homeTeam} />
+                                      <ClubLogo name={ev.homeTeam} size="large" />
                                       <span className="font-medium text-slate-100 truncate">{ev.homeTeam}</span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                      <ClubLogo name={ev.awayTeam} />
+                                      <ClubLogo name={ev.awayTeam} size="large" />
                                       <span className="font-medium text-slate-100 truncate">{ev.awayTeam}</span>
                                     </div>
                                   </div>
