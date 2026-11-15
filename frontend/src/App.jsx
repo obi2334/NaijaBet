@@ -578,7 +578,7 @@ export default function App() {
   return (
       <div className="bet-app flex h-dvh flex-col overflow-hidden text-slate-200 antialiased">
       {/* Top Bar */}
-      <header className="flex h-13 shrink-0 items-center justify-between border-b border-white/[0.08] bg-[#11151e] px-3.5 sm:px-4">
+      <header className="sports-topbar flex h-13 shrink-0 items-center justify-between border-b border-white/[0.08] bg-[#11151e] px-3.5 sm:px-4">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
             <div className="brand-mark flex h-8 w-8 items-center justify-center rounded-lg text-xs font-extrabold tracking-tight text-white">
@@ -666,7 +666,7 @@ export default function App() {
       {/* Main 3-Column Layout */}
       <div className="flex flex-1 overflow-hidden">
         {/* DESKTOP LEFT SIDEBAR */}
-        <aside className="hidden lg:flex w-56 shrink-0 flex-col border-r border-white/[0.08] bg-[#0e121a]">
+        <aside className="sports-sidebar hidden lg:flex w-44 shrink-0 flex-col border-r border-white/[0.08] bg-[#0e121a]">
           <div className="p-2.5 border-b border-white/[0.06]">
             <input
               type="text"
@@ -793,8 +793,8 @@ export default function App() {
               {groupedByLeague.map(([groupKey, leagueEvents]) => {
                 const [sportName, leagueName] = groupKey.split('::');
                 return (
-                  <div key={groupKey} className="overflow-hidden rounded-lg border border-white/[0.08] bg-[#11151e]">
-                    <div className="flex items-center justify-between border-b border-white/[0.08] bg-[#161b26] px-3 sm:px-3.5 py-2 text-xs font-semibold text-slate-200">
+                  <div key={groupKey} className="league-board overflow-hidden rounded-lg border border-white/[0.08] bg-[#11151e]">
+                    <div className="league-heading flex items-center justify-between border-b border-white/[0.08] bg-[#161b26] px-3 sm:px-3.5 py-2 text-xs font-semibold text-slate-200">
                       <div className="flex items-center gap-2 truncate">
                         <SportLogo name={sportName} className="h-4 w-4 shrink-0" />
                         <span className="text-slate-400">{sportName}</span>
@@ -811,7 +811,7 @@ export default function App() {
                         const isExpanded = !!expandedMatchIds[ev.id];
 
                         return (
-                          <div key={ev.id} className="transition hover:bg-white/[0.02]">
+                          <div key={ev.id} className="match-row transition hover:bg-white/[0.02]">
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-3 sm:px-3.5 py-2.5">
                               <div className="flex items-center justify-between sm:justify-start gap-3 flex-1 min-w-0">
                                 <div className="flex items-center gap-2.5 min-w-0">
@@ -865,7 +865,7 @@ export default function App() {
                                           odds: out.odds,
                                         })
                                       }
-                                      className={`flex flex-1 sm:flex-none sm:w-16 flex-col items-center justify-center rounded-md border py-1.5 transition tabular-nums ${
+                                      className={`odds-button flex flex-1 sm:flex-none sm:w-16 flex-col items-center justify-center rounded-md border py-1.5 transition tabular-nums ${
                                         active
                                           ? 'border-emerald-500 bg-emerald-600 text-white font-bold shadow-sm'
                                           : 'border-white/[0.08] bg-[#181e2a] text-white hover:border-white/25 hover:bg-[#1f2736]'
@@ -942,7 +942,7 @@ export default function App() {
         </main>
 
         {/* DESKTOP RIGHT BETSLIP SIDEBAR */}
-        <aside className="hidden lg:flex w-80 shrink-0 flex-col border-l border-white/[0.08] bg-[#0e121a]">
+        <aside className="betslip-panel hidden lg:flex w-64 shrink-0 flex-col border-l border-white/[0.08] bg-[#0e121a]">
           {renderBetslipContent(false)}
         </aside>
       </div>

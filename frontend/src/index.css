@@ -2,8 +2,8 @@
 
 :root {
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  color: #e8edf1;
-  background: #080d0c;
+  color: #dce8f0;
+  background: #10212d;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -13,32 +13,58 @@
 }
 
 * { box-sizing: border-box; }
-body { margin: 0; min-width: 320px; min-height: 100vh; background: #080d0c; }
+body { margin: 0; min-width: 320px; min-height: 100vh; background: #10212d; }
 button, input { font: inherit; }
 button { cursor: pointer; }
-button:focus-visible, input:focus-visible { outline: 2px solid #6ee7a8; outline-offset: 2px; }
-::selection { color: #04160d; background: #6ee7a8; }
+button:focus-visible, input:focus-visible { outline: 2px solid #4da4ff; outline-offset: 2px; }
+::selection { color: #061522; background: #62b5ff; }
 ::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: #0b1110; }
-::-webkit-scrollbar-thumb { background: #263531; border-radius: 99px; }
+::-webkit-scrollbar-track { background: #122532; }
+::-webkit-scrollbar-thumb { background: #36566c; border-radius: 99px; }
 
 .bet-app {
-  background: radial-gradient(ellipse at 48% -18%, rgba(38, 126, 81, .19), transparent 42%), #080d0c;
+  color: #dce8f0;
+  background: radial-gradient(ellipse at 48% -18%, rgba(44, 107, 151, .22), transparent 42%), #10212d;
 }
-.brand-mark, .deposit-button { background: linear-gradient(135deg, #20b86f, #12844f); box-shadow: 0 8px 24px rgba(16, 185, 110, .12); }
-.wallet-pill { background: rgba(7, 13, 12, .8); }
-.sports-main { background-image: radial-gradient(ellipse at 60% 0%, rgba(30, 87, 60, .09), transparent 40%); }
+.sports-topbar { background: #102330 !important; border-color: #294252 !important; }
+.sports-sidebar, .betslip-panel { background: #142936 !important; border-color: #2b4352 !important; }
+.sports-main { background: #182d3b; background-image: radial-gradient(ellipse at 52% 0%, rgba(42, 100, 141, .12), transparent 42%); }
+.brand-mark, .deposit-button {
+  background: linear-gradient(135deg, #258cf4, #1265c4) !important;
+  box-shadow: 0 7px 22px rgba(18, 108, 205, .2);
+}
+.brand-mark { border-radius: 8px; }
+.wallet-pill { background: #0b1b26; border-color: #315064 !important; }
 .sports-hero {
-  background: linear-gradient(106deg, rgba(13, 45, 31, .97), rgba(13, 29, 24, .96) 52%, rgba(14, 25, 22, .92));
-  box-shadow: inset 0 1px rgba(255,255,255,.045), 0 15px 45px rgba(0,0,0,.16);
+  background: linear-gradient(108deg, #17384f, #183247 56%, #142b3b);
+  border-color: rgba(76, 160, 226, .26) !important;
+  box-shadow: inset 0 1px rgba(255,255,255,.05), 0 15px 45px rgba(0,0,0,.17);
 }
-.sports-hero::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, transparent 40%, rgba(91, 225, 147, .045)); }
-.hero-ball { box-shadow: inset 0 0 0 2px rgba(255,255,255,.035), 0 0 80px rgba(63, 201, 118, .08); }
-.live-dot { box-shadow: 0 0 0 4px rgba(74, 222, 128, .11), 0 0 15px rgba(74,222,128,.65); }
-.promo-card { border-color: rgba(52, 211, 153, .14); background: linear-gradient(95deg, rgba(20, 44, 34, .78), rgba(18, 28, 25, .82)); }
-.modal-backdrop { background: rgba(2, 7, 6, .78); backdrop-filter: blur(10px); }
-.modal-card { background: linear-gradient(145deg, #121c18, #0d1412); box-shadow: 0 25px 90px rgba(0,0,0,.55); }
-.form-field { background: rgba(4, 10, 8, .7); border-color: rgba(255,255,255,.11); }
-.form-field:focus { border-color: rgba(52,211,153,.65); box-shadow: 0 0 0 3px rgba(52,211,153,.1); }
-.quick-amount { border-color: rgba(255,255,255,.1); background: rgba(255,255,255,.035); color: #d2ded7; }
-.quick-amount:hover { border-color: rgba(52,211,153,.5); color: white; background: rgba(52,211,153,.08); }
+.sports-hero::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, transparent 40%, rgba(67, 157, 231, .08)); }
+.hero-ball { box-shadow: inset 0 0 0 2px rgba(255,255,255,.035), 0 0 80px rgba(57, 151, 224, .13); }
+.live-dot { box-shadow: 0 0 0 4px rgba(74, 164, 255, .13), 0 0 15px rgba(74,164,255,.65); }
+.promo-card { border-color: rgba(74, 164, 255, .22); background: linear-gradient(95deg, rgba(30, 63, 84, .95), rgba(23, 48, 65, .95)); }
+.league-board { background: #1b3342 !important; border-color: #2c4657 !important; box-shadow: 0 4px 14px rgba(0,0,0,.1); }
+.league-heading { background: #203a4c !important; border-color: #304b5c !important; }
+.match-row { border-color: #2b4352 !important; }
+.sports-main [class*="bg-[#0b0e14]"], .sports-main [class*="bg-[#0d1017]"] { background: #112431 !important; }
+.sports-main [class*="bg-[#141924]"], .sports-main [class*="bg-[#171d29]"], .sports-main [class*="bg-[#181e2a]"] { background: #20394a !important; }
+.sports-main [class*="bg-[#1f2736]"], .sports-main [class*="bg-[#1c2333]"] { background: #2a4a60 !important; }
+.sports-main [class*="border-white/"] { border-color: rgba(166, 197, 218, .16) !important; }
+.odds-button { min-width: 58px; border-color: #355368 !important; background: #234155 !important; }
+.odds-button:hover { border-color: #65b5ff !important; background: #2b506a !important; }
+.sports-main button.bg-emerald-600, .bet-app button.bg-emerald-600 { background: #1678df !important; border-color: #318ef0 !important; }
+.sports-main button.bg-emerald-600:hover, .bet-app button.bg-emerald-600:hover { background: #258cf4 !important; }
+.betslip-panel [class*="bg-[#0b0e14]"] { background: #10222e !important; }
+.betslip-panel [class*="bg-[#141924]"], .betslip-panel [class*="bg-[#171d29]"] { background: #1d3545 !important; }
+.modal-backdrop { background: rgba(3, 11, 17, .8); backdrop-filter: blur(10px); }
+.modal-card { background: linear-gradient(145deg, #172b37, #10212b); box-shadow: 0 25px 90px rgba(0,0,0,.55); }
+.form-field { background: rgba(7, 19, 27, .82); border-color: rgba(180, 208, 226, .18); }
+.form-field:focus { border-color: rgba(65, 157, 238, .75); box-shadow: 0 0 0 3px rgba(44, 137, 218, .14); }
+.quick-amount { border-color: rgba(180, 208, 226, .16); background: rgba(255,255,255,.035); color: #d2e0e9; }
+.quick-amount:hover { border-color: rgba(80, 168, 244, .58); color: white; background: rgba(48, 139, 218, .12); }
+
+@media (max-width: 1023px) {
+  .sports-main { background: #162a37; }
+  .sports-hero { border-radius: 12px !important; }
+}
