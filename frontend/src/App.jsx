@@ -1,6 +1,7 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import welcomeImage from './assets/naijabet-welcome.png';
 
 const API_BASE = import.meta.env.VITE_API_BASE || '';
 const AUTH_KEY = 'naijabet-token';
@@ -1026,10 +1027,10 @@ export default function App() {
             <div className="welcome-copy relative z-10 flex flex-col justify-between p-6 sm:p-10 lg:p-14">
               <div className="flex items-center gap-3">
                 <span className="welcome-brand-mark flex h-11 w-11 items-center justify-center rounded-xl text-sm font-black text-white">NB</span>
-                <span className="text-lg font-black tracking-tight text-white">NaijaBet<span className="text-sky-300">.ng</span></span>
+                <span className="text-lg font-black tracking-tight text-white">NaijaBet<span className="text-emerald-300">.ng</span></span>
               </div>
               <div className="my-12 max-w-xl lg:my-0">
-                <p className="mb-4 flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.24em] text-sky-300"><span className="live-dot h-2 w-2 rounded-full bg-sky-400" /> Sports • Odds • Live action</p>
+                <p className="mb-4 flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.24em] text-emerald-300"><span className="live-dot h-2 w-2 rounded-full bg-emerald-400" /> Sports • Odds • Live action</p>
                 <h1 id="welcome-title" className="max-w-lg text-4xl font-black leading-[1.04] tracking-tight text-white sm:text-6xl">Welcome to <span className="welcome-highlight">NaijaBet.</span></h1>
                 <p className="mt-5 max-w-md text-sm leading-6 text-slate-300 sm:text-base">Your home for match day. Explore the fixtures, pick your odds, and keep every game close.</p>
                 <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -1039,11 +1040,12 @@ export default function App() {
               </div>
               <p className="text-[11px] text-slate-500">Play responsibly • 18+ • Wallet in Nigerian naira</p>
             </div>
-            <div className="welcome-art relative flex min-h-[280px] items-center justify-center overflow-hidden sm:min-h-[360px] lg:min-h-full">
+            <div className="welcome-art relative flex min-h-[360px] items-center justify-center overflow-hidden sm:min-h-[460px] lg:min-h-full">
               <div className="welcome-stadium-lines absolute inset-0" aria-hidden="true" />
-              <div className="welcome-orbit absolute h-[280px] w-[280px] rounded-full sm:h-[390px] sm:w-[390px]" aria-hidden="true" />
-              <div className="welcome-ball-wrap relative z-10 flex h-44 w-44 items-center justify-center rounded-full sm:h-60 sm:w-60">
-                <SportLogo name="Football" className="h-32 w-32 drop-shadow-[0_18px_28px_rgba(0,0,0,.5)] sm:h-44 sm:w-44" />
+              <div className="welcome-image-card relative z-10 flex h-[340px] w-full max-w-[260px] items-center justify-center overflow-hidden rounded-3xl sm:h-[500px] sm:max-w-[320px]">
+                <img src={welcomeImage} alt="Footballer in the NaijaBet welcome artwork" className="welcome-image h-full w-full object-contain" />
+                <div className="welcome-image-shade absolute inset-0" aria-hidden="true" />
+                <div className="welcome-image-title absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-2xl px-5 py-3 text-2xl font-black tracking-tight text-white sm:px-7 sm:py-4 sm:text-3xl">Bet Naija</div>
               </div>
               <div className="welcome-art-caption absolute bottom-5 left-5 right-5 flex flex-wrap items-center justify-center gap-2 sm:bottom-8 sm:left-8 sm:right-8">
                 {['Football', 'Basketball', 'Tennis', 'Esports'].map((sport) => <span key={sport} className="welcome-sport-chip inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-[11px] font-semibold text-slate-100"><SportLogo name={sport} className="h-4 w-4" />{sport}</span>)}
