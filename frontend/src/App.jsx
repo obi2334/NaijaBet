@@ -236,6 +236,7 @@ const outcomeSide = (outcome, event) => {
   if (selection === '2' || selection.includes('away') || (awayTeam && selection.includes(awayTeam))) return 'away';
   return 'other';
 };
+const RESULT_MARKET_NAMES = ['1X2', 'Moneyline', 'Winner', 'Bout Winner', 'Match Winner'];
 const orderMatchOutcomes = (outcomes, event) => {
   const hasDraw = outcomes.some((outcome) => outcomeSide(outcome, event) === 'draw');
   const order = hasDraw ? ['home', 'draw', 'away'] : ['home', 'away'];
@@ -244,6 +245,14 @@ const orderMatchOutcomes = (outcomes, event) => {
     .sort((a, b) => (a.rank < 0 ? 99 : a.rank) - (b.rank < 0 ? 99 : b.rank) || a.index - b.index)
     .map(({ outcome }) => outcome);
 };
+const displayOutcomeLabel = (outcome, event = {}) => {
+  const selection = String(outcome.selectionName || '').trim();
+  const sideCode = /^(?:1|2|x|home|away|draw)(?:\s*[([]\s*(?:home|away|draw|x)\s*[)\]])?$/i.test(selection);
+  if (!RESULT_MARKET_NAMES.includes(outcome.marketName) && !sideCode) return selection;
+  const side = outcomeSide(outcome, event);
+  return side === 'home' ? 'HOME' : side === 'draw' ? 'DRAW' : side === 'away' ? 'AWAY' : selection;
+};
+const orderMarketOutcomes = (outcomes, event) => RESULT_MARKET_NAMES.includes(outcomes[0]?.marketName) ? orderMatchOutcomes(outcomes, event) : outcomes;
 
 const useBetSlipStore = create(
   persist(
@@ -587,7 +596,7 @@ export default function App() {
               </div>
               <div className="flex items-center justify-between text-xs">
                 <span className="font-semibold text-white">
-                  {item.selectionName} <span className="text-[10px] font-normal text-slate-500">({item.marketName})</span>
+                  {displayOutcomeLabel(item, events.find((event) => event.id === item.eventId))} <span className="text-[10px] font-normal text-slate-500">({item.marketName})</span>
                 </span>
                 <span className="font-semibold text-white tabular-nums">
                   {Number(item.odds).toFixed(2)}
@@ -794,7 +803,7 @@ export default function App() {
                       <div className="event-detail-market-nav flex gap-2 overflow-x-auto rounded-xl p-2">{marketCategoriesForSport(selectedEvent.sport).map((category) => <button key={category} onClick={() => setDetailMarketCategory(category)} className={`home-market-chip shrink-0 rounded-lg border px-3 py-2 text-[11px] font-semibold ${detailMarketCategory === category ? 'home-market-chip-active' : ''}`}>{category}</button>)}</div>
                       <label className="event-detail-search flex items-center gap-2 rounded-xl border px-3 py-2.5 text-xs text-slate-400"><span>⌕</span><input value={detailMarketSearch} onChange={(event) => setDetailMarketSearch(event.target.value)} className="min-w-0 flex-1 bg-transparent text-white outline-none" placeholder="Search markets" /></label>
                       {Object.entries(selectedEventOutcomes.filter((outcome) => marketCategoryMatches(outcome.marketName, detailMarketCategory, selectedEvent.sport) && `${outcome.marketName} ${outcome.selectionName}`.toLowerCase().includes(detailMarketSearch.toLowerCase())).reduce((groups, outcome) => { (groups[outcome.marketName] ||= []).push(outcome); return groups; }, {})).map(([marketName, outcomes]) => (
-                        <section key={marketName} className="event-detail-market overflow-hidden rounded-xl border"><h3 className="border-b border-white/10 px-4 py-3 text-xs font-extrabold text-white">{marketName}</h3><div className="grid grid-cols-1 gap-2 p-3 sm:grid-cols-2 lg:grid-cols-3">{outcomes.map((outcome) => { const active = selections.some((selection) => selection.outcomeId === outcome.id); return <button key={outcome.id} disabled={outcome.isSuspended === 1} onClick={() => toggleSelection({ eventId: selectedEvent.id, matchName: `${selectedEvent.homeTeam} vs ${selectedEvent.awayTeam}`, outcomeId: outcome.id, marketName: outcome.marketName, selectionName: outcome.selectionName, odds: outcome.odds })} className={`event-detail-odd flex items-center justify-between gap-3 rounded-lg border px-3 py-3 text-left text-xs disabled:opacity-50 ${active ? 'home-event-odd-active' : ''}`}><span className="min-w-0 truncate text-slate-200">{outcome.selectionName}</span><strong className="shrink-0 text-sm tabular-nums text-white">{Number(outcome.odds).toFixed(2)}</strong></button>; })}</div></section>
+                        <section key={marketName} className="event-detail-market overflow-hidden rounded-xl border"><h3 className="border-b border-white/10 px-4 py-3 text-xs font-extrabold text-white">{marketName}</h3><div className="grid grid-cols-1 gap-2 p-3 sm:grid-cols-2 lg:grid-cols-3">{orderMarketOutcomes(outcomes, selectedEvent).map((outcome) => { const active = selections.some((selection) => selection.outcomeId === outcome.id); return <button key={outcome.id} disabled={outcome.isSuspended === 1} onClick={() => toggleSelection({ eventId: selectedEvent.id, matchName: `${selectedEvent.homeTeam} vs ${selectedEvent.awayTeam}`, outcomeId: outcome.id, marketName: outcome.marketName, selectionName: outcome.selectionName, odds: outcome.odds })} className={`event-detail-odd flex items-center justify-between gap-3 rounded-lg border px-3 py-3 text-left text-xs disabled:opacity-50 ${active ? 'home-event-odd-active' : ''}`}><span className="min-w-0 truncate text-slate-200">{displayOutcomeLabel(outcome, selectedEvent)}</span><strong className="shrink-0 text-sm tabular-nums text-white">{Number(outcome.odds).toFixed(2)}</strong></button>; })}</div></section>
                       ))}
                       {!selectedEventOutcomes.some((outcome) => marketCategoryMatches(outcome.marketName, detailMarketCategory, selectedEvent.sport) && `${outcome.marketName} ${outcome.selectionName}`.toLowerCase().includes(detailMarketSearch.toLowerCase())) && <div className="event-detail-market rounded-xl border px-4 py-8 text-center text-xs text-slate-400">No markets available in this category yet.</div>}
                     </div>
@@ -825,7 +834,7 @@ export default function App() {
                     }));
                     return outcome ? { ...outcome, cardLabel: label } : { id: `${ev.id}-missing-${label}`, marketName: '1X2', selectionName: label, cardLabel: label, isMissing: true };
                   })
-                : orderMatchOutcomes(availableOutcomes, ev).slice(0, 3).map((out) => ({ ...out, cardLabel: out.selectionName }));
+                : orderMatchOutcomes(availableOutcomes, ev).slice(0, 3).map((out) => ({ ...out, cardLabel: displayOutcomeLabel(out, ev) }));
               const hasScore = ev.homeScore !== null && ev.homeScore !== undefined && ev.awayScore !== null && ev.awayScore !== undefined;
               return <article className="home-event-card rounded-2xl border p-3.5 sm:p-4" key={ev.id}>
                 <div className="mb-4 flex items-center justify-between gap-2"><div className="flex min-w-0 items-center gap-2"><span className="truncate text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-100/75">{ev.league}</span>{ev.id.startsWith('22222222-2222-2222-2222-222222222') && <span className="demo-odds-badge shrink-0">DEMO</span>}</div><span className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-extrabold ${ev.isLive === 1 ? 'home-live-label' : 'home-upcoming-label'}`}>{ev.isLive === 1 ? `● ${ev.matchClock || 'LIVE'}` : new Date(ev.kickoffTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></div>
@@ -867,7 +876,7 @@ export default function App() {
                         <div key={idx} className="flex items-center justify-between text-xs gap-2">
                           <span className="text-slate-300 truncate">
                             {leg.homeTeam} vs {leg.awayTeam} <span className="text-slate-500">•</span>{' '}
-                            <span className="font-semibold text-white">{leg.selectionName}</span>
+                            <span className="font-semibold text-white">{displayOutcomeLabel(leg, { homeTeam: leg.homeTeam, awayTeam: leg.awayTeam })}</span>
                           </span>
                           <span className="font-semibold text-white tabular-nums shrink-0">
                             {Number(leg.lockedOdds).toFixed(2)}
@@ -971,7 +980,7 @@ export default function App() {
                                       }`}
                                     >
                                       <span className={`text-[10px] ${active ? 'text-emerald-100' : 'text-slate-400'}`}>
-                                        {out.selectionName}
+                                        {displayOutcomeLabel(out, ev)}
                                       </span>
                                       <span className="text-xs font-semibold">
                                         {Number(out.odds).toFixed(2)}
@@ -1112,7 +1121,7 @@ export default function App() {
                         <div className="mb-3 flex items-center justify-between"><span className="text-[8px] font-bold uppercase tracking-[0.12em] text-emerald-100/75">{match.league || 'Top match'}</span><span className="text-[8px] font-semibold text-white/75">{match.isLive ? '● LIVE' : 'UPCOMING'}</span></div>
                         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1 text-center text-[9px] font-bold text-white"><span>{match.homeTeam}</span><span className="text-sm font-black">{match.isLive ? (index === 0 ? '2 : 1' : '2 : 2') : 'VS'}</span><span>{match.awayTeam}</span></div>
                         <div className="mt-1 text-center text-[7px] text-white/65">{match.isLive ? '1ST HALF 39′' : 'Match winner'}</div>
-                        <div className="mt-3 grid grid-cols-3 gap-1">{matchOutcomes.map((outcome, outcomeIndex) => <span className="welcome-mini-odd" key={outcome.id || outcome.selectionName || outcomeIndex}><small>{outcome.selectionName}</small><b>{Number(outcome.odds).toFixed(2)}</b></span>)}</div>
+                        <div className="mt-3 grid grid-cols-3 gap-1">{matchOutcomes.map((outcome, outcomeIndex) => <span className="welcome-mini-odd" key={outcome.id || outcome.selectionName || outcomeIndex}><small>{displayOutcomeLabel(outcome, event)}</small><b>{Number(outcome.odds).toFixed(2)}</b></span>)}</div>
                       </article>;
                     })}
                   </div>
