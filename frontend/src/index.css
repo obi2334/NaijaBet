@@ -222,7 +222,10 @@ button:focus-visible, input:focus-visible { outline: 2px solid #36d980; outline-
 .home-market-chip:hover { border-color: rgba(102, 212, 134, .35); color: #f2fff5; }
 .home-market-chip-active { border-color: rgba(90, 211, 127, .55); background: linear-gradient(135deg, #258f50, #176b39); color: #fff; }
 
-.event-detail-overlay { background: #091b10; }
+.event-detail-overlay { background: rgba(0, 0, 0, .76); backdrop-filter: blur(5px); }
+.event-detail-dialog { border-color: rgba(133, 214, 151, .24); background: #091b10; box-shadow: 0 28px 100px rgba(0,0,0,.55); }
+.match-markets-button { border-color: rgba(90, 211, 127, .3); background: rgba(18, 71, 37, .5); color: #baf4cb; }
+.match-markets-button:hover { border-color: rgba(90, 211, 127, .6); background: rgba(29, 111, 56, .65); color: white; }
 .event-detail-back { border: 1px solid rgba(114, 203, 137, .24); background: rgba(19, 55, 30, .8); }
 .event-detail-hero { border-color: rgba(133, 214, 151, .2); background: linear-gradient(140deg, rgba(29, 84, 44, .96), rgba(9, 31, 16, .98)); }
 .event-detail-team { max-width: 100%; color: #fff; font-size: clamp(.85rem, 2vw, 1.2rem); font-weight: 800; line-height: 1.2; overflow-wrap: anywhere; }
