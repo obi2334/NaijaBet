@@ -220,3 +220,16 @@ button:focus-visible, input:focus-visible { outline: 2px solid #36d980; outline-
 .home-market-chip { border-color: rgba(151, 198, 160, .12); background: rgba(5, 21, 11, .7); color: #aabaae; }
 .home-market-chip:hover { border-color: rgba(102, 212, 134, .35); color: #f2fff5; }
 .home-market-chip-active { border-color: rgba(90, 211, 127, .55); background: linear-gradient(135deg, #258f50, #176b39); color: #fff; }
+
+.event-detail-overlay { background: #091b10; }
+.event-detail-back { border: 1px solid rgba(114, 203, 137, .24); background: rgba(19, 55, 30, .8); }
+.event-detail-hero { border-color: rgba(133, 214, 151, .2); background: linear-gradient(140deg, rgba(29, 84, 44, .96), rgba(9, 31, 16, .98)); }
+.event-detail-team { max-width: 100%; color: #fff; font-size: clamp(.85rem, 2vw, 1.2rem); font-weight: 800; line-height: 1.2; overflow-wrap: anywhere; }
+.event-detail-score { min-width: 96px; border: 1px solid rgba(145, 211, 157, .16); background: rgba(1, 18, 7, .42); }
+.event-detail-tabs button { border: 1px solid rgba(145, 211, 157, .14); background: rgba(8, 27, 14, .8); color: #aebdaf; }
+.event-detail-tabs .event-detail-tab-active { border-color: rgba(99, 218, 132, .44); background: #196e37; color: white; }
+.event-detail-market-nav { background: rgba(4, 19, 9, .65); }
+.event-detail-search { border-color: rgba(145, 211, 157, .18); background: rgba(4, 19, 9, .62); }
+.event-detail-market, .event-detail-side { border-color: rgba(145, 211, 157, .16); background: rgba(15, 41, 22, .88); }
+.event-detail-odd { border-color: rgba(145, 211, 157, .14); background: rgba(4, 19, 9, .46); }
+.event-detail-odd:hover { border-color: rgba(103, 219, 136, .45); background: rgba(39, 129, 63, .32); }

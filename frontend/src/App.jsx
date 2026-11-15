@@ -272,6 +272,9 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('Highlights');
   const [selectedSport, setSelectedSport] = useState('All Sports');
   const [selectedMarketFilter, setSelectedMarketFilter] = useState('All');
+  const [selectedEventId, setSelectedEventId] = useState(null);
+  const [detailMarketSearch, setDetailMarketSearch] = useState('');
+  const [detailTab, setDetailTab] = useState('Markets');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedMatchIds, setExpandedMatchIds] = useState({});
   const [bookingInput, setBookingInput] = useState('');
@@ -409,6 +412,7 @@ export default function App() {
   };
 
   const liveCount = useMemo(() => events.filter((e) => e.isLive === 1).length, [events]);
+  const selectedEvent = events.find((event) => event.id === selectedEventId) || null;
   const homeFeaturedEvents = useMemo(() => {
     const preferred = selectedSport === 'All Sports' ? events.filter((event) => event.sport === 'Football') : events.filter((event) => event.sport === selectedSport);
     return (selectedSport === 'All Sports' && preferred.length === 0 ? events : preferred).slice(0, 3);
@@ -720,7 +724,7 @@ export default function App() {
         </aside>
 
         {/* CENTER WORKSPACE */}
-        <main className="sports-main flex-1 overflow-y-auto p-3 sm:p-4 pb-20 lg:pb-4 space-y-3.5">
+        <main className="sports-main relative flex-1 overflow-y-auto p-3 sm:p-4 pb-20 lg:pb-4 space-y-3.5">
           <section className="home-greeting flex items-center justify-between rounded-2xl border px-4 py-4 sm:px-5">
             <div className="flex min-w-0 items-center gap-3">
               <div className="home-avatar flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-black text-white">{(email.trim()[0] || (token ? 'N' : 'G')).toUpperCase()}</div>
@@ -728,6 +732,31 @@ export default function App() {
             </div>
             <div className="home-greeting-status flex shrink-0 items-center gap-2 rounded-full px-3 py-2 text-[10px] font-bold text-emerald-100"><span className="live-dot h-2 w-2 rounded-full bg-emerald-400" />{liveCount} Live</div>
           </section>
+          {selectedEvent && (
+            <section className="event-detail-overlay absolute inset-0 z-30 overflow-y-auto p-3 sm:p-5" aria-label={`${selectedEvent.homeTeam} versus ${selectedEvent.awayTeam} match details`}>
+              <div className="mx-auto max-w-6xl space-y-4">
+                <button type="button" onClick={() => setSelectedEventId(null)} className="event-detail-back rounded-lg px-3 py-2 text-xs font-bold text-emerald-100">← Back to fixtures</button>
+                <div className="event-detail-hero rounded-2xl border p-4 sm:p-6">
+                  <div className="mb-5 flex flex-wrap items-center justify-between gap-2 text-[11px]"><span className="font-semibold text-emerald-100/80">{selectedEvent.sport} <span className="px-1 text-emerald-100/40">/</span> {selectedEvent.league}</span><span className={selectedEvent.isLive === 1 ? 'home-live-label rounded-full px-3 py-1 font-bold' : 'home-upcoming-label rounded-full px-3 py-1 font-bold'}>{selectedEvent.isLive === 1 ? `● ${selectedEvent.matchClock || 'LIVE'}` : new Date(selectedEvent.kickoffTime).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</span></div>
+                  <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 text-center"><div className="flex min-w-0 flex-col items-center gap-2"><ClubLogo name={selectedEvent.homeTeam} size="large" /><h1 className="event-detail-team">{selectedEvent.homeTeam}</h1><span className="text-[10px] uppercase tracking-wider text-slate-400">Home</span></div><div className="event-detail-score rounded-2xl px-4 py-3"><strong className="block text-2xl font-black text-white">{selectedEvent.homeScore != null && selectedEvent.awayScore != null ? `${selectedEvent.homeScore} : ${selectedEvent.awayScore}` : 'VS'}</strong><span className="text-[9px] uppercase tracking-wider text-slate-400">{selectedEvent.isLive === 1 ? 'Live score' : 'Match centre'}</span></div><div className="flex min-w-0 flex-col items-center gap-2"><ClubLogo name={selectedEvent.awayTeam} size="large" /><h2 className="event-detail-team">{selectedEvent.awayTeam}</h2><span className="text-[10px] uppercase tracking-wider text-slate-400">Away</span></div></div>
+                </div>
+                <div className="event-detail-tabs flex gap-2"><button onClick={() => setDetailTab('Markets')} className={`rounded-full px-4 py-2 text-xs font-bold ${detailTab === 'Markets' ? 'event-detail-tab-active' : ''}`}>Markets</button><button onClick={() => setDetailTab('Same Game Multi')} className={`rounded-full px-4 py-2 text-xs font-bold ${detailTab === 'Same Game Multi' ? 'event-detail-tab-active' : ''}`}>Same Game Multi</button></div>
+                {detailTab === 'Markets' ? (
+                  <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
+                    <div className="min-w-0 space-y-3">
+                      <div className="event-detail-market-nav flex gap-2 overflow-x-auto rounded-xl p-2">{MARKET_CATEGORIES.map((category) => <button key={category} onClick={() => setSelectedMarketFilter(category)} className={`home-market-chip shrink-0 rounded-lg border px-3 py-2 text-[11px] font-semibold ${selectedMarketFilter === category ? 'home-market-chip-active' : ''}`}>{category}</button>)}</div>
+                      <label className="event-detail-search flex items-center gap-2 rounded-xl border px-3 py-2.5 text-xs text-slate-400"><span>⌕</span><input value={detailMarketSearch} onChange={(event) => setDetailMarketSearch(event.target.value)} className="min-w-0 flex-1 bg-transparent text-white outline-none" placeholder="Search markets" /></label>
+                      {Object.entries((selectedEvent.outcomes || []).filter((outcome) => marketCategoryMatches(outcome.marketName, selectedMarketFilter) && `${outcome.marketName} ${outcome.selectionName}`.toLowerCase().includes(detailMarketSearch.toLowerCase())).reduce((groups, outcome) => { (groups[outcome.marketName] ||= []).push(outcome); return groups; }, {})).map(([marketName, outcomes]) => (
+                        <section key={marketName} className="event-detail-market overflow-hidden rounded-xl border"><h3 className="border-b border-white/10 px-4 py-3 text-xs font-extrabold text-white">{marketName}</h3><div className="grid grid-cols-1 gap-2 p-3 sm:grid-cols-2 lg:grid-cols-3">{outcomes.map((outcome) => { const active = selections.some((selection) => selection.outcomeId === outcome.id); return <button key={outcome.id} disabled={outcome.isSuspended === 1} onClick={() => toggleSelection({ eventId: selectedEvent.id, matchName: `${selectedEvent.homeTeam} vs ${selectedEvent.awayTeam}`, outcomeId: outcome.id, marketName: outcome.marketName, selectionName: outcome.selectionName, odds: outcome.odds })} className={`event-detail-odd flex items-center justify-between gap-3 rounded-lg border px-3 py-3 text-left text-xs disabled:opacity-50 ${active ? 'home-event-odd-active' : ''}`}><span className="min-w-0 truncate text-slate-200">{outcome.selectionName}</span><strong className="shrink-0 text-sm tabular-nums text-white">{Number(outcome.odds).toFixed(2)}</strong></button>; })}</div></section>
+                      ))}
+                      {!(selectedEvent.outcomes || []).some((outcome) => marketCategoryMatches(outcome.marketName, selectedMarketFilter) && `${outcome.marketName} ${outcome.selectionName}`.toLowerCase().includes(detailMarketSearch.toLowerCase())) && <div className="event-detail-market rounded-xl border px-4 py-8 text-center text-xs text-slate-400">No markets available for this selection yet.</div>}
+                    </div>
+                    <aside className="event-detail-side h-fit rounded-xl border p-4"><h3 className="text-sm font-extrabold text-white">Match information</h3><dl className="mt-4 space-y-3 text-xs"><div className="flex justify-between gap-3"><dt className="text-slate-400">Competition</dt><dd className="text-right font-semibold text-slate-200">{selectedEvent.league}</dd></div><div className="flex justify-between gap-3"><dt className="text-slate-400">Sport</dt><dd className="font-semibold text-slate-200">{selectedEvent.sport}</dd></div><div className="flex justify-between gap-3"><dt className="text-slate-400">Available outcomes</dt><dd className="font-semibold text-slate-200">{(selectedEvent.outcomes || []).length}</dd></div></dl><p className="mt-4 border-t border-white/10 pt-3 text-[10px] leading-relaxed text-slate-400">Scores and betting markets are shown when provided by the event feed.</p></aside>
+                  </div>
+                ) : <div className="event-detail-market rounded-xl border px-4 py-8 text-center"><h3 className="text-sm font-bold text-white">Same Game Multi</h3><p className="mt-2 text-xs text-slate-400">This market option is not available for this fixture yet.</p></div>}
+              </div>
+            </section>
+          )}
 
           <section className="home-sport-strip flex gap-2 overflow-x-auto pb-1" aria-label="Choose a sport">
             {['All Sports', 'Football', 'Basketball', 'Tennis', 'Table Tennis', 'Esports'].map((sport) => {
@@ -743,12 +772,22 @@ export default function App() {
           {activeTab !== 'My Bets' && <section className="home-top-events space-y-3">
             <div className="flex items-end justify-between px-1"><div><h2 className="text-lg font-extrabold tracking-tight text-white">Top Events</h2><p className="mt-0.5 text-[11px] text-slate-400">Pick a match and add your odds</p></div><button onClick={() => { setActiveTab('Highlights'); setSelectedSport('All Sports'); }} className="text-[11px] font-semibold text-emerald-300 hover:text-emerald-200">View all <span aria-hidden="true">→</span></button></div>
             {homeFeaturedEvents.length ? <div className="home-event-grid grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">{homeFeaturedEvents.map((ev) => {
-              const cardOutcomes = ev.outcomes.filter((out) => ['1X2', 'Moneyline', 'Winner', 'Bout Winner', 'Match Winner'].includes(out.marketName)).slice(0, 3);
+                            const availableOutcomes = (ev.outcomes || []).filter((out) => ['1X2', 'Moneyline', 'Winner', 'Bout Winner', 'Match Winner'].includes(out.marketName));
+              const cardOutcomes = ev.sport === 'Football' && availableOutcomes.some((out) => out.marketName === '1X2')
+                ? ['HOME', 'DRAW', 'AWAY'].map((label) => {
+                    const keys = label === 'HOME' ? ['home', '1'] : label === 'DRAW' ? ['draw', 'x'] : ['away', '2'];
+                    const outcome = availableOutcomes.find((out) => out.marketName === '1X2' && keys.some((key) => {
+                      const value = String(out.selectionName).toLowerCase();
+                      return value === key || value.startsWith(`${key} `) || value.includes(`(${key})`);
+                    }));
+                    return outcome ? { ...outcome, cardLabel: label } : { id: `${ev.id}-missing-${label}`, marketName: '1X2', selectionName: label, cardLabel: label, isMissing: true };
+                  })
+                : availableOutcomes.slice(0, 3).map((out) => ({ ...out, cardLabel: out.selectionName }));
               const hasScore = ev.homeScore !== null && ev.homeScore !== undefined && ev.awayScore !== null && ev.awayScore !== undefined;
               return <article className="home-event-card rounded-2xl border p-3.5 sm:p-4" key={ev.id}>
                 <div className="mb-4 flex items-center justify-between"><span className="truncate pr-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-100/75">{ev.league}</span><span className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-extrabold ${ev.isLive === 1 ? 'home-live-label' : 'home-upcoming-label'}`}>{ev.isLive === 1 ? `● ${ev.matchClock || 'LIVE'}` : new Date(ev.kickoffTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></div>
-                <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-center"><div className="flex min-w-0 flex-col items-center gap-2"><ClubLogo name={ev.homeTeam} size="large" /><span className="home-team-name w-full text-[11px] font-bold text-white sm:text-xs" title={ev.homeTeam}>{ev.homeTeam}</span></div><div className="home-score-box rounded-xl px-3 py-2 text-center"><strong className="block text-lg font-black tabular-nums text-white">{hasScore ? `${ev.homeScore} : ${ev.awayScore}` : 'VS'}</strong><span className="block text-[8px] font-semibold uppercase tracking-wide text-slate-400">{ev.isLive === 1 ? 'Live score' : 'Match winner'}</span></div><div className="flex min-w-0 flex-col items-center gap-2"><ClubLogo name={ev.awayTeam} size="large" /><span className="home-team-name w-full text-[11px] font-bold text-white sm:text-xs" title={ev.awayTeam}>{ev.awayTeam}</span></div></div>
-                <div className="mt-4 grid grid-cols-3 gap-1.5">{cardOutcomes.map((out) => { const active = selections.some((selection) => selection.outcomeId === out.id); return <button key={out.id} disabled={out.isSuspended === 1} onClick={() => toggleSelection({ eventId: ev.id, matchName: `${ev.homeTeam} vs ${ev.awayTeam}`, outcomeId: out.id, marketName: out.marketName, selectionName: out.selectionName, odds: out.odds })} className={`home-event-odd disabled:opacity-50 flex min-w-0 flex-col items-center rounded-lg border py-2 text-[10px] tabular-nums transition ${active ? 'home-event-odd-active' : ''}`}><span className="truncate text-slate-400">{out.selectionName}</span><strong className="mt-0.5 text-xs text-white">{Number(out.odds).toFixed(2)}</strong></button>; })}</div>
+                <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-center"><button type="button" onClick={() => { setSelectedEventId(ev.id); setDetailTab('Markets'); setDetailMarketSearch(''); }} aria-label={`View ${ev.homeTeam} match details`} className="flex min-w-0 flex-col items-center gap-2 hover:opacity-85"><ClubLogo name={ev.homeTeam} size="large" /><span className="home-team-name w-full text-[11px] font-bold text-white sm:text-xs" title={ev.homeTeam}>{ev.homeTeam}</span></button><div className="home-score-box rounded-xl px-3 py-2 text-center"><strong className="block text-lg font-black tabular-nums text-white">{hasScore ? `${ev.homeScore} : ${ev.awayScore}` : 'VS'}</strong><span className="block text-[8px] font-semibold uppercase tracking-wide text-slate-400">{ev.isLive === 1 ? 'Live score' : 'Match winner'}</span></div><button type="button" onClick={() => { setSelectedEventId(ev.id); setDetailTab('Markets'); setDetailMarketSearch(''); }} aria-label={`View ${ev.awayTeam} match details`} className="flex min-w-0 flex-col items-center gap-2 hover:opacity-85"><ClubLogo name={ev.awayTeam} size="large" /><span className="home-team-name w-full text-[11px] font-bold text-white sm:text-xs" title={ev.awayTeam}>{ev.awayTeam}</span></button></div>
+                <div className="mt-4 grid grid-cols-3 gap-1.5">{cardOutcomes.map((out) => { const active = selections.some((selection) => selection.outcomeId === out.id); return <button key={out.id} disabled={out.isMissing || out.isSuspended === 1} onClick={() => toggleSelection({ eventId: ev.id, matchName: `${ev.homeTeam} vs ${ev.awayTeam}`, outcomeId: out.id, marketName: out.marketName, selectionName: out.selectionName, odds: out.odds })} className={`home-event-odd disabled:opacity-50 flex min-w-0 flex-col items-center rounded-lg border py-2 text-[10px] tabular-nums transition ${active ? 'home-event-odd-active' : ''}`}><span className="truncate text-slate-400">{out.cardLabel}</span><strong className="mt-0.5 text-xs text-white">{out.isMissing ? '—' : Number(out.odds).toFixed(2)}</strong></button>; })}</div>
                 {cardOutcomes.length === 0 && <p className="mt-4 rounded-lg bg-black/15 px-3 py-2 text-center text-[10px] text-slate-400">Markets coming soon</p>}
               </article>;
             })}</div> : <div className="home-no-events rounded-2xl border px-4 py-8 text-center text-xs text-slate-400">Featured fixtures will appear here when the event feed is available.</div>}
