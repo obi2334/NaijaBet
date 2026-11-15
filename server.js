@@ -53,6 +53,8 @@ for (let i=0;i<fixtureOdds.length;i++) addOutcome.run(`33333333-3333-3333-3333-$
 const updateOutcome = db.prepare('UPDATE outcomes SET market_name=?, selection_name=? WHERE id=?');
 updateOutcome.run('1X2','HOME','33333333-3333-3333-3333-333333333347');
 updateOutcome.run('1X2','AWAY','33333333-3333-3333-3333-333333333348');
+updateOutcome.run('Moneyline','HOME','33333333-3333-3333-3333-333333333335');
+updateOutcome.run('Moneyline','AWAY','33333333-3333-3333-3333-333333333336');
 const demoFootballMarkets = [
   ['22222222-2222-2222-2222-222222222221','1X2','AWAY',3.00],
   ['22222222-2222-2222-2222-222222222222','1X2','DRAW',3.30],

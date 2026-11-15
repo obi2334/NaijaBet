@@ -227,6 +227,23 @@ const marketCategoryMatches = (marketName, category, sport = 'Football') => {
   if (sport === 'Tennis' && category === 'Player Props') return /player|aces|double faults|break points/.test(market);
   return patterns[category]?.test(market) || false;
 };
+const outcomeSide = (outcome, event) => {
+  const selection = String(outcome.selectionName || '').trim().toLowerCase();
+  if (selection === 'x' || selection === 'draw' || selection === 'tie' || selection.includes('draw')) return 'draw';
+  const homeTeam = String(event.homeTeam || '').trim().toLowerCase();
+  const awayTeam = String(event.awayTeam || '').trim().toLowerCase();
+  if (selection === '1' || selection.includes('home') || (homeTeam && selection.includes(homeTeam))) return 'home';
+  if (selection === '2' || selection.includes('away') || (awayTeam && selection.includes(awayTeam))) return 'away';
+  return 'other';
+};
+const orderMatchOutcomes = (outcomes, event) => {
+  const hasDraw = outcomes.some((outcome) => outcomeSide(outcome, event) === 'draw');
+  const order = hasDraw ? ['home', 'draw', 'away'] : ['home', 'away'];
+  return outcomes
+    .map((outcome, index) => ({ outcome, index, rank: order.indexOf(outcomeSide(outcome, event)) }))
+    .sort((a, b) => (a.rank < 0 ? 99 : a.rank) - (b.rank < 0 ? 99 : b.rank) || a.index - b.index)
+    .map(({ outcome }) => outcome);
+};
 
 const useBetSlipStore = create(
   persist(
@@ -300,7 +317,6 @@ export default function App() {
   const [balanceKobo, setBalanceKobo] = useState(0);
   const [activeTab, setActiveTab] = useState('Highlights');
   const [selectedSport, setSelectedSport] = useState('All Sports');
-  const [selectedMarketFilter, setSelectedMarketFilter] = useState('All');
   const [selectedEventId, setSelectedEventId] = useState(null);
   const [detailMarketSearch, setDetailMarketSearch] = useState('');
   const [detailMarketCategory, setDetailMarketCategory] = useState('All');
@@ -460,14 +476,13 @@ export default function App() {
     return events.filter((e) => {
       if (activeTab === 'In-Play' && e.isLive !== 1) return false;
       if (selectedSport !== 'All Sports' && e.sport !== selectedSport) return false;
-      if (selectedMarketFilter !== 'All' && !(e.outcomes || []).some((outcome) => marketCategoryMatches(outcome.marketName, selectedMarketFilter, e.sport))) return false;
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         return `${e.homeTeam} ${e.awayTeam} ${e.league} ${e.sport}`.toLowerCase().includes(q);
       }
       return true;
     });
-  }, [events, activeTab, selectedSport, selectedMarketFilter, searchQuery]);
+  }, [events, activeTab, selectedSport, searchQuery]);
 
   const groupedByLeague = useMemo(() => {
     const map = new Map();
@@ -703,7 +718,7 @@ export default function App() {
             </button>
           </div>
           {token ? (
-            <button onClick={() => { localStorage.removeItem(AUTH_KEY); setToken(''); setBalanceKobo(0); setMyBets([]); }} className="hidden sm:inline-flex rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-white/5">Sign out</button>
+            <button onClick={() => { localStorage.removeItem(AUTH_KEY); setToken(''); setEmail(''); setBalanceKobo(0); setMyBets([]); }} className="inline-flex rounded-lg border border-white/10 px-2 py-1.5 text-[10px] font-semibold text-slate-300 hover:bg-white/5 sm:px-3 sm:py-2 sm:text-xs">Sign out</button>
           ) : (
             <button onClick={() => { setAuthMode('login'); setAuthOpen(true); }} className="rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-white/5">Sign in</button>
           )}
@@ -735,7 +750,7 @@ export default function App() {
                 <button
                   key={sp}
                   onClick={() => {
-                    setSelectedSport(sp); setSelectedMarketFilter('All');
+                    setSelectedSport(sp);
                     if (activeTab === 'My Bets') setActiveTab('Highlights');
                   }}
                   className={`flex w-full items-center justify-between rounded-md px-2.5 py-2 text-xs transition ${
@@ -793,12 +808,8 @@ export default function App() {
           <section className="home-sport-strip flex gap-2 overflow-x-auto pb-1" aria-label="Choose a sport">
             {['All Sports', 'Football', 'Basketball', 'Tennis', 'Table Tennis', 'Esports'].map((sport) => {
               const selected = selectedSport === sport;
-              return <button key={sport} onClick={() => { setSelectedSport(sport); setSelectedMarketFilter("All"); if (activeTab === 'My Bets') setActiveTab("Highlights"); }} className={`home-sport-chip flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-semibold transition ${selected ? 'home-sport-chip-active' : ''}`}><span className="home-sport-icon flex h-7 w-7 shrink-0 items-center justify-center rounded-full"><SportLogo name={sport} className="h-5 w-5" /></span><span>{sport}</span></button>;
+              return <button key={sport} onClick={() => { setSelectedSport(sport); if (activeTab === 'My Bets') setActiveTab("Highlights"); }} className={`home-sport-chip flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-semibold transition ${selected ? 'home-sport-chip-active' : ''}`}><span className="home-sport-icon flex h-7 w-7 shrink-0 items-center justify-center rounded-full"><SportLogo name={sport} className="h-5 w-5" /></span><span>{sport}</span></button>;
             })}
-          </section>
-          <section className="home-market-panel rounded-2xl border p-3 sm:p-4" aria-label="Browse markets">
-            <div className="mb-3 flex items-center justify-between gap-3"><div><h2 className="text-sm font-extrabold text-white">{selectedSport === 'All Sports' ? 'Browse markets' : `${selectedSport} markets`}</h2><p className="mt-0.5 text-[10px] text-slate-400">Choose a market to filter the fixtures below</p></div><span className="hidden sm:inline text-[10px] text-emerald-200/75">{filteredEvents.length} matches</span></div>
-            <div className="home-market-filters flex gap-2 overflow-x-auto pb-1">{marketCategoriesForSport(selectedSport === 'All Sports' ? 'Football' : selectedSport).map((category) => <button key={category} onClick={() => setSelectedMarketFilter(category)} className={`home-market-chip shrink-0 rounded-lg border px-3 py-2 text-[11px] font-semibold transition ${selectedMarketFilter === category ? 'home-market-chip-active' : ''}`}>{category}</button>)}</div>
           </section>
           {paymentNotice && <button onClick={() => setPaymentNotice('')} className="w-full rounded-lg border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-left text-xs text-emerald-100">{paymentNotice}<span className="float-right text-emerald-300">Dismiss ×</span></button>}
           {activeTab !== 'My Bets' && <section className="home-top-events space-y-3">
@@ -814,7 +825,7 @@ export default function App() {
                     }));
                     return outcome ? { ...outcome, cardLabel: label } : { id: `${ev.id}-missing-${label}`, marketName: '1X2', selectionName: label, cardLabel: label, isMissing: true };
                   })
-                : availableOutcomes.slice(0, 3).map((out) => ({ ...out, cardLabel: out.selectionName }));
+                : orderMatchOutcomes(availableOutcomes, ev).slice(0, 3).map((out) => ({ ...out, cardLabel: out.selectionName }));
               const hasScore = ev.homeScore !== null && ev.homeScore !== undefined && ev.awayScore !== null && ev.awayScore !== undefined;
               return <article className="home-event-card rounded-2xl border p-3.5 sm:p-4" key={ev.id}>
                 <div className="mb-4 flex items-center justify-between gap-2"><div className="flex min-w-0 items-center gap-2"><span className="truncate text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-100/75">{ev.league}</span>{ev.id.startsWith('22222222-2222-2222-2222-222222222') && <span className="demo-odds-badge shrink-0">DEMO</span>}</div><span className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-extrabold ${ev.isLive === 1 ? 'home-live-label' : 'home-upcoming-label'}`}>{ev.isLive === 1 ? `● ${ev.matchClock || 'LIVE'}` : new Date(ev.kickoffTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></div>
@@ -893,8 +904,9 @@ export default function App() {
 
                     <div className="divide-y divide-white/[0.06]">
                       {leagueEvents.map((ev) => {
-                        const matchingOutcomes = (ev.outcomes || []).filter((outcome) => marketCategoryMatches(outcome.marketName, selectedMarketFilter, ev.sport));
-                        const primaryOutcomes = matchingOutcomes.filter((outcome) => ['1X2', 'Moneyline', 'Winner', 'Bout Winner', 'Match Winner'].includes(outcome.marketName));
+                        const candidateOutcomes = (ev.outcomes || []).filter((outcome) => ['1X2', 'Moneyline', 'Winner', 'Bout Winner', 'Match Winner'].includes(outcome.marketName));
+                        const preferredMarketName = candidateOutcomes.find((outcome) => outcome.marketName === '1X2')?.marketName || candidateOutcomes[0]?.marketName;
+                        const primaryOutcomes = orderMatchOutcomes(candidateOutcomes.filter((outcome) => !preferredMarketName || outcome.marketName === preferredMarketName), ev);
                         const openEventMarkets = () => { setSelectedEventId(ev.id); setDetailMarketCategory('All'); setDetailTab('Markets'); setDetailMarketSearch(''); };
 
                         return (
