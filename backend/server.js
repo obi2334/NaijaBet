@@ -46,16 +46,6 @@ for (const [id,sport,league,home,away,hours] of fixtureEvents) addEvent.run(id,s
 const fixtureOdds = [2.45,3.4,2.75,1.95,3.6,3.8,2.15,1.72,1.85,1.95,1.88,1.92,1.65,2.25,1.78,2.02,1.8,2.0];
 const fixtureSelections = ['HOME','DRAW','AWAY','HOME','DRAW','AWAY','1 (HOME)','2 (AWAY)','1 (HOME)','2 (AWAY)','1','2','1','2','1','2','1','2'];
 const fixtureMarket = ['1X2','1X2','1X2','1X2','1X2','1X2','Moneyline','Moneyline','Moneyline','Moneyline','Match Winner','Match Winner','Match Winner','Match Winner','Match Winner','Match Winner','Match Winner','Match Winner'];
-for (let i = 0; i < fixtureOdds.length; i++) {
-  const eventPair = fixtureEvents[Math.floor(i / 2)] || ['Fallback Event'];
-  addOutcome.run(
-    `33333333-3333-3333-3333-${String(333333333331 + i).slice(-12)}`,
-    eventPair[0],
-    fixtureMarket[i],
-    fixtureSelections[i],
-    fixtureOdds[i]
-  );
-}
 for (let i=0;i<fixtureOdds.length;i++) addOutcome.run(`33333333-3333-3333-3333-${String(333333333331+i).slice(-12)}`,fixtureEvents[Math.floor(i/2)][0],fixtureMarket[i],fixtureSelections[i],fixtureOdds[i]);
 
 const walletFor = (id) => db.prepare('SELECT balance FROM wallets WHERE user_id = ?').get(id);
@@ -104,7 +94,7 @@ app.post('/api/wallet/deposits',auth,async(req,res)=>{
   const amount=req.body?.amount;if(typeof amount!=='number'||!Number.isSafeInteger(amount)||amount<50)return res.status(400).json({error:'The minimum deposit is ₦50. Enter a whole number of naira.'});
   const kobo=amount*100;if(!Number.isSafeInteger(kobo))return res.status(400).json({error:'Amount is too large.'});
   const reference=`dep-${crypto.randomUUID()}`,id=crypto.randomUUID();db.prepare('INSERT INTO deposits(id,user_id,reference,amount) VALUES(?,?,?,?)').run(id,req.user.userId,reference,kobo);
-  try{const response=await fetch('https://api.paystack.co/transaction/initialize',{method:'POST',headers:{Authorization:`Bearer ${PAYSTACK_SECRET_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({email:req.user.email,amount:kobo,currency:'NGN',reference,callback_url:`${APP_URL}/payment/return`})});const result=await response.json();if(!response.ok||!result.status||!result.data?.authorization_url)throw Error('Could not start checkout. Please try again.');res.status(201).json({reference,checkoutUrl:result.data.authorization_url,amount,status:'PENDING'})}
+  try{const response=await fetch('https://api.paystack.co/transaction/initialize',{method:'POST',headers:{Authorization:`Bearer ${PAYSTACK_SECRET_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({email:req.user.email,amount:kobo,currency:'NGN',reference,callback_url:APP_URL})});const result=await response.json();if(!response.ok||!result.status||!result.data?.authorization_url)throw Error('Could not start checkout. Please try again.');res.status(201).json({reference,checkoutUrl:result.data.authorization_url,amount,status:'PENDING'})}
   catch(error){db.prepare("UPDATE deposits SET status='FAILED' WHERE id=?").run(id);res.status(502).json({error:error.message})}
 });
 app.get('/api/wallet/deposits/:reference',auth,async(req,res)=>{
