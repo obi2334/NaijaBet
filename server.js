@@ -49,6 +49,49 @@ const fixtureMarket = ['1X2','1X2','1X2','1X2','1X2','1X2','Moneyline','Moneylin
 const addOutcome = db.prepare('INSERT OR IGNORE INTO outcomes (id,event_id,market_name,selection_name,odds,is_suspended) VALUES (?,?,?,?,?,0)');
 for (let i=0;i<fixtureOdds.length;i++) addOutcome.run(`33333333-3333-3333-3333-${String(333333333331+i).slice(-12)}`,fixtureEvents[Math.floor(i/2)][0],fixtureMarket[i],fixtureSelections[i],fixtureOdds[i]);
 
+// Complete the football 1X2 demo prices and add clearly sample-only detail markets.
+const updateOutcome = db.prepare('UPDATE outcomes SET market_name=?, selection_name=? WHERE id=?');
+updateOutcome.run('1X2','HOME','33333333-3333-3333-3333-333333333347');
+updateOutcome.run('1X2','AWAY','33333333-3333-3333-3333-333333333348');
+const demoFootballMarkets = [
+  ['22222222-2222-2222-2222-222222222221','1X2','AWAY',3.00],
+  ['22222222-2222-2222-2222-222222222222','1X2','DRAW',3.30],
+  ['22222222-2222-2222-2222-222222222229','1X2','DRAW',3.60],
+  ['22222222-2222-2222-2222-222222222221','Draw No Bet','Chelsea',1.70],
+  ['22222222-2222-2222-2222-222222222221','Draw No Bet','Real Madrid',2.10],
+  ['22222222-2222-2222-2222-222222222221','Both Teams to Score','Yes',1.65],
+  ['22222222-2222-2222-2222-222222222221','Both Teams to Score','No',2.15],
+  ['22222222-2222-2222-2222-222222222221','Asian Total','Over 2.5',1.85],
+  ['22222222-2222-2222-2222-222222222221','Asian Total','Under 2.5',1.95],
+  ['22222222-2222-2222-2222-222222222221','Asian Handicap','Chelsea -0.5',2.05],
+  ['22222222-2222-2222-2222-222222222221','Asian Handicap','Real Madrid +0.5',1.75],
+  ['22222222-2222-2222-2222-222222222221','Anytime Goalscorer','Cole Palmer',2.50],
+  ['22222222-2222-2222-2222-222222222221','Anytime Goalscorer','Vinicius Jr',2.65],
+  ['22222222-2222-2222-2222-222222222222','Draw No Bet','Liverpool',1.55],
+  ['22222222-2222-2222-2222-222222222222','Draw No Bet','PSG',2.25],
+  ['22222222-2222-2222-2222-222222222222','Both Teams to Score','Yes',1.62],
+  ['22222222-2222-2222-2222-222222222222','Both Teams to Score','No',2.20],
+  ['22222222-2222-2222-2222-222222222222','Asian Total','Over 2.5',1.80],
+  ['22222222-2222-2222-2222-222222222222','Asian Total','Under 2.5',2.00],
+  ['22222222-2222-2222-2222-222222222222','Asian Handicap','Liverpool -0.5',1.95],
+  ['22222222-2222-2222-2222-222222222222','Asian Handicap','PSG +0.5',1.90],
+  ['22222222-2222-2222-2222-222222222222','Anytime Goalscorer','Mohamed Salah',2.10],
+  ['22222222-2222-2222-2222-222222222222','Anytime Goalscorer','Ousmane Dembele',2.75],
+  ['22222222-2222-2222-2222-222222222229','Draw No Bet','Arsenal',1.62],
+  ['22222222-2222-2222-2222-222222222229','Draw No Bet','Manchester City',2.20],
+  ['22222222-2222-2222-2222-222222222229','Both Teams to Score','Yes',1.70],
+  ['22222222-2222-2222-2222-222222222229','Both Teams to Score','No',2.05],
+  ['22222222-2222-2222-2222-222222222229','Asian Total','Over 2.5',1.88],
+  ['22222222-2222-2222-2222-222222222229','Asian Total','Under 2.5',1.92],
+  ['22222222-2222-2222-2222-222222222229','Asian Handicap','Arsenal -0.5',1.95],
+  ['22222222-2222-2222-2222-222222222229','Asian Handicap','Manchester City +0.5',1.90],
+  ['22222222-2222-2222-2222-222222222229','Anytime Goalscorer','Bukayo Saka',2.40],
+  ['22222222-2222-2222-2222-222222222229','Anytime Goalscorer','Erling Haaland',2.05],
+];
+for (const [index, [eventId, market, selection, odds]] of demoFootballMarkets.entries()) {
+  addOutcome.run(`33333333-3333-3333-3333-${String(333333333349+index).slice(-12)}`,eventId,market,selection,odds);
+}
+
 const walletFor = (id) => db.prepare('SELECT balance FROM wallets WHERE user_id = ?').get(id);
 function auth(req,res,next) { try { const h=req.get('authorization')||''; if(!h.startsWith('Bearer ')) throw Error(); req.user=jwt.verify(h.slice(7),JWT_SECRET); next(); } catch { res.status(401).json({error:'Please sign in to continue.'}); } }
 

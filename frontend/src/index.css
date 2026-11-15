@@ -199,6 +199,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid #36d980; outline-
 .home-event-card:hover { transform: translateY(-2px); border-color: rgba(103, 219, 136, .4); box-shadow: 0 16px 34px rgba(0,0,0,.22); }
 .home-live-label { background: rgba(27, 143, 73, .32); color: #baf4cb; }
 .home-upcoming-label { background: rgba(255,255,255,.07); color: #c1cec4; }
+.demo-odds-badge { border: 1px solid rgba(243, 194, 84, .34); border-radius: 9999px; background: rgba(243, 194, 84, .1); color: #f6d98c; padding: 2px 7px; font-size: 8px; font-weight: 900; letter-spacing: .09em; line-height: 1.35; white-space: nowrap; }
 .home-score-box { min-width: 78px; border: 1px solid rgba(160, 218, 171, .12); background: rgba(5, 18, 9, .34); }
 .home-event-odd { border-color: rgba(191, 224, 195, .12); background: rgba(4, 19, 9, .24); }
 .home-event-odd:hover { border-color: rgba(116, 225, 145, .42); background: rgba(67, 174, 96, .18); }
