@@ -713,7 +713,7 @@ export default function App() {
           <section className="home-sport-strip flex gap-2 overflow-x-auto pb-1" aria-label="Choose a sport">
             {['All Sports', 'Football', 'Basketball', 'Tennis', 'Table Tennis', 'Esports'].map((sport) => {
               const selected = selectedSport === sport;
-              return <button key={sport} onClick={() => setSelectedSport(sport)} className={`home-sport-chip flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-semibold transition ${selected ? 'home-sport-chip-active' : ''}`}><SportLogo name={sport} className="h-4 w-4" /><span>{sport}</span></button>;
+              return <button key={sport} onClick={() => setSelectedSport(sport)} className={`home-sport-chip flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-semibold transition ${selected ? 'home-sport-chip-active' : ''}`}><span className="home-sport-icon flex h-7 w-7 shrink-0 items-center justify-center rounded-full"><SportLogo name={sport} className="h-5 w-5" /></span><span>{sport}</span></button>;
             })}
           </section>
           {paymentNotice && <button onClick={() => setPaymentNotice('')} className="w-full rounded-lg border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-left text-xs text-emerald-100">{paymentNotice}<span className="float-right text-emerald-300">Dismiss ×</span></button>}

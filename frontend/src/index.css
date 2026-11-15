@@ -209,3 +209,6 @@ button:focus-visible, input:focus-visible { outline: 2px solid #36d980; outline-
   .home-event-grid { grid-template-columns: minmax(0, 1fr); }
   .home-event-card { padding: 13px; }
 }
+.home-sport-chip { gap: .55rem; padding: .45rem .8rem; font-weight: 700; }
+.home-sport-icon { border: 1px solid rgba(125, 230, 154, .28); background: radial-gradient(circle at 35% 25%, rgba(74, 189, 105, .27), rgba(8, 31, 15, .9) 72%); box-shadow: inset 0 1px rgba(255,255,255,.12), 0 2px 8px rgba(0,0,0,.2); }
+.home-sport-chip-active .home-sport-icon { border-color: rgba(198, 255, 211, .48); background: rgba(5, 48, 22, .45); box-shadow: inset 0 1px rgba(255,255,255,.2), 0 0 12px rgba(100, 235, 140, .22); }
