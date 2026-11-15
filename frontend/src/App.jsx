@@ -392,6 +392,13 @@ export default function App() {
   };
 
   const liveCount = useMemo(() => events.filter((e) => e.isLive === 1).length, [events]);
+  const welcomeMatches = useMemo(() => {
+    const football = events.filter((event) => event.sport === 'Football').slice(0, 2);
+    return football.length ? football : [
+      { id: 'welcome-chelsea-bayern', homeTeam: 'Chelsea', awayTeam: 'Bayern', league: 'Top match', status: 'LIVE', isLive: 1, outcomes: [{ selectionName: '1', odds: 3.56 }, { selectionName: 'X', odds: 3.56 }, { selectionName: '2', odds: 3.56 }] },
+      { id: 'welcome-madrid-city', homeTeam: 'Real Madrid', awayTeam: 'Man City', league: 'Top match', status: 'LIVE', isLive: 1, outcomes: [{ selectionName: '1', odds: 2.1 }, { selectionName: 'X', odds: 3.4 }, { selectionName: '2', odds: 2.8 }] },
+    ];
+  }, [events]);
 
   const filteredEvents = useMemo(() => {
     return events.filter((e) => {
@@ -1022,33 +1029,59 @@ export default function App() {
       )}
 
       {welcomeOpen && (
-        <section className="welcome-screen fixed inset-0 z-[80] flex items-center justify-center overflow-y-auto p-4 sm:p-8" aria-labelledby="welcome-title">
-          <div className="welcome-frame relative grid w-full max-w-6xl overflow-hidden rounded-3xl border border-white/10 lg:min-h-[620px] lg:grid-cols-[1fr_0.92fr]">
-            <div className="welcome-copy relative z-10 flex flex-col justify-between p-6 sm:p-10 lg:p-14">
+        <section className="welcome-screen fixed inset-0 z-[80] overflow-y-auto px-4 py-4 sm:px-8 sm:py-6" aria-labelledby="welcome-title">
+          <div className="welcome-scene mx-auto flex min-h-[calc(100dvh-2rem)] w-full max-w-6xl flex-col">
+            <header className="welcome-header flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <span className="welcome-brand-mark flex h-11 w-11 items-center justify-center rounded-xl text-sm font-black text-white">NB</span>
-                <span className="text-lg font-black tracking-tight text-white">NaijaBet<span className="text-emerald-300">.ng</span></span>
+                <span className="welcome-brand-mark flex h-10 w-10 items-center justify-center rounded-xl text-sm font-black text-white">NB</span>
+                <div><span className="block text-base font-black tracking-tight text-white">NaijaBet</span><span className="block text-[9px] font-bold uppercase tracking-[0.2em] text-emerald-300">Sports • Live odds</span></div>
               </div>
-              <div className="my-12 max-w-xl lg:my-0">
-                <p className="mb-4 flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.24em] text-emerald-300"><span className="live-dot h-2 w-2 rounded-full bg-emerald-400" /> Sports • Odds • Live action</p>
-                <h1 id="welcome-title" className="max-w-lg text-4xl font-black leading-[1.04] tracking-tight text-white sm:text-6xl">Welcome to <span className="welcome-highlight">NaijaBet.</span></h1>
-                <p className="mt-5 max-w-md text-sm leading-6 text-slate-300 sm:text-base">Your home for match day. Explore the fixtures, pick your odds, and keep every game close.</p>
-                <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                  <button onClick={dismissWelcome} className="welcome-primary rounded-xl px-6 py-3.5 text-sm font-extrabold text-white">Explore sports <span aria-hidden="true" className="ml-2">→</span></button>
-                  {!token && <button onClick={() => { dismissWelcome(); setAuthMode('register'); setAuthOpen(true); }} className="welcome-secondary rounded-xl px-6 py-3.5 text-sm font-bold text-white">Create account</button>}
+              <button onClick={dismissWelcome} aria-label="Skip welcome screen" className="welcome-skip rounded-full px-4 py-2 text-xs font-bold text-white">Skip <span aria-hidden="true" className="ml-1">→</span></button>
+            </header>
+
+            <div className="welcome-devices relative flex flex-1 items-center justify-center py-8 sm:py-10">
+              <div className="welcome-phone welcome-phone-promo relative z-10">
+                <div className="welcome-phone-screen">
+                  <div className="welcome-phone-status"><span>19:27</span><span>● ● ▰</span></div>
+                  <div className="welcome-promo-image">
+                    <img src={welcomeImage} alt="Footballer featured in NaijaBet" />
+                    <div className="welcome-image-shade absolute inset-0" aria-hidden="true" />
+                    <div className="welcome-image-title absolute left-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-2xl px-4 py-3 text-2xl font-black tracking-tight text-white">Bet Naija</div>
+                  </div>
+                  <div className="welcome-promo-bottom flex flex-1 flex-col justify-center px-4 pb-4 pt-3 text-center">
+                    <p className="text-[9px] font-extrabold uppercase tracking-[0.2em] text-emerald-300">Your game. Your moment.</p>
+                    <button onClick={dismissWelcome} className="welcome-primary mt-3 rounded-full py-3 text-sm font-extrabold text-white">Get Started</button>
+                    {!token && <button onClick={() => { dismissWelcome(); setAuthMode('register'); setAuthOpen(true); }} className="mt-2 text-[10px] font-semibold text-emerald-200">Create your account</button>}
+                  </div>
                 </div>
               </div>
-              <p className="text-[11px] text-slate-500">Play responsibly • 18+ • Wallet in Nigerian naira</p>
-            </div>
-            <div className="welcome-art relative flex min-h-[360px] items-center justify-center overflow-hidden sm:min-h-[460px] lg:min-h-full">
-              <div className="welcome-stadium-lines absolute inset-0" aria-hidden="true" />
-              <div className="welcome-image-card relative z-10 aspect-square w-full max-w-[360px] overflow-hidden rounded-3xl">
-                <img src={welcomeImage} alt="Footballer in the NaijaBet welcome artwork" className="welcome-image absolute inset-0 h-full w-full object-cover" />
-                <div className="welcome-image-shade absolute inset-0" aria-hidden="true" />
-                <div className="welcome-image-title absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-2xl px-5 py-3 text-2xl font-black tracking-tight text-white sm:px-7 sm:py-4 sm:text-3xl">Bet Naija</div>
-              </div>
 
+              <div className="welcome-phone welcome-phone-events relative z-20">
+                <div className="welcome-phone-screen welcome-events-screen">
+                  <div className="welcome-phone-status"><span>19:27</span><span>● ● ▰</span></div>
+                  <div className="welcome-events-header flex items-center justify-between px-4 pt-2">
+                    <span className="text-sm font-black text-white">NaijaBet</span><span className="text-[10px] text-slate-400">● Live</span>
+                  </div>
+                  <div className="welcome-categories flex items-center justify-between gap-1 px-3 py-4">
+                    {['Football', 'Basketball', 'Tennis', 'Esports'].map((sport) => <span key={sport} className="flex flex-col items-center gap-1 text-[8px] text-slate-300"><i className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/15"><SportLogo name={sport} className="h-4 w-4" /></i>{sport}</span>)}
+                  </div>
+                  <div className="flex items-center justify-between px-4 pb-2"><h2 className="text-sm font-extrabold text-white">Top Events</h2><span className="text-[9px] font-semibold text-emerald-300">View all →</span></div>
+                  <div className="welcome-event-list flex-1 space-y-3 overflow-hidden px-3 pb-3">
+                    {welcomeMatches.map((match, index) => {
+                      const matchOutcomes = (match.outcomes || []).slice(0, 3);
+                      return <article className={`welcome-event-card ${index === 1 ? 'welcome-event-card-alt' : ''}`} key={match.id}>
+                        <div className="mb-3 flex items-center justify-between"><span className="text-[8px] font-bold uppercase tracking-[0.12em] text-emerald-100/75">{match.league || 'Top match'}</span><span className="text-[8px] font-semibold text-white/75">{match.isLive ? '● LIVE' : 'UPCOMING'}</span></div>
+                        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1 text-center text-[9px] font-bold text-white"><span>{match.homeTeam}</span><span className="text-sm font-black">{match.isLive ? (index === 0 ? '2 : 1' : '2 : 2') : 'VS'}</span><span>{match.awayTeam}</span></div>
+                        <div className="mt-1 text-center text-[7px] text-white/65">{match.isLive ? '1ST HALF 39′' : 'Match winner'}</div>
+                        <div className="mt-3 grid grid-cols-3 gap-1">{matchOutcomes.map((outcome, outcomeIndex) => <span className="welcome-mini-odd" key={outcome.id || outcome.selectionName || outcomeIndex}><small>{outcome.selectionName}</small><b>{Number(outcome.odds).toFixed(2)}</b></span>)}</div>
+                      </article>;
+                    })}
+                  </div>
+                  <div className="welcome-phone-nav flex items-center justify-around px-3 py-3 text-[8px] text-slate-400"><span className="active">⌂<small>Home</small></span><span>▦<small>Sports</small></span><span>▤<small>My Bets</small></span><span>◉<small>Wallet</small></span></div>
+                </div>
+              </div>
             </div>
+            <footer className="welcome-footer pb-2 text-center text-[10px] text-slate-400">Live sports, live odds • Play responsibly • 18+</footer>
           </div>
         </section>
       )}

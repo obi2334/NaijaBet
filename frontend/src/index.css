@@ -65,7 +65,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid #36d980; outline-
 .quick-amount:hover { border-color: rgba(80, 206, 117, .58); color: white; background: rgba(48, 160, 80, .12); }
 
 @media (max-width: 1023px) {
-  .sports-main { background: #162a37; }
+  .sports-main { background: #15281c; }
   .sports-hero { border-radius: 12px !important; }
 }
 
@@ -109,3 +109,79 @@ button:focus-visible, input:focus-visible { outline: 2px solid #36d980; outline-
 .welcome-image-card { width: min(100%, 360px); aspect-ratio: 1 / 1; }
 .welcome-image { object-position: center 17%; }
 .welcome-image-title { top: 70%; }
+/* Two-phone NaijaBet welcome page inspired by the supplied animated mockup. */
+.welcome-screen {
+  background: radial-gradient(ellipse at 50% 50%, rgba(30, 126, 63, .2), transparent 58%), radial-gradient(ellipse at 50% 110%, rgba(18, 100, 48, .24), transparent 45%), #07110a;
+  backdrop-filter: blur(12px);
+}
+.welcome-scene { min-height: calc(100dvh - 2rem); }
+.welcome-header { min-height: 46px; }
+.welcome-skip { border: 1px solid rgba(142, 202, 154, .22); background: rgba(7, 21, 11, .58); transition: background .2s, border-color .2s; }
+.welcome-skip:hover { border-color: rgba(96, 218, 132, .55); background: rgba(32, 184, 111, .16); }
+.welcome-devices { perspective: 1500px; isolation: isolate; }
+.welcome-phone {
+  position: relative;
+  width: clamp(178px, 25vw, 270px);
+  aspect-ratio: .49;
+  flex: 0 0 auto;
+  padding: 7px;
+  border: 1px solid rgba(211, 232, 218, .52);
+  border-radius: 39px;
+  background: linear-gradient(135deg, #6b766e, #18231c 13%, #050907 48%, #657269 90%, #101812);
+  box-shadow: 0 38px 90px rgba(0, 0, 0, .58), inset 0 0 0 1px rgba(255,255,255,.11);
+  transform-style: preserve-3d;
+}
+.welcome-phone-screen {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 32px;
+  background: linear-gradient(165deg, #101a13, #080e0a 58%, #0c1710);
+}
+.welcome-phone-screen::before { content: ""; position: absolute; z-index: 4; top: 8px; left: 50%; width: 28%; height: 16px; border-radius: 99px; background: #030604; transform: translateX(-50%); box-shadow: inset 0 1px 2px rgba(255,255,255,.08); }
+.welcome-phone-status { display: flex; flex: 0 0 27px; align-items: center; justify-content: space-between; padding: 3px 15px 0; color: rgba(255,255,255,.87); font-size: 8px; font-weight: 700; }
+.welcome-promo-image { position: relative; width: 100%; aspect-ratio: 1 / 1; flex: 0 0 auto; overflow: hidden; background: #07100a; }
+.welcome-promo-image img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 17%; }
+.welcome-promo-image .welcome-image-title { top: 70%; }
+.welcome-promo-bottom { background: linear-gradient(180deg, #0d1a11, #08100a); }
+.welcome-phone-promo { z-index: 2; margin-right: -28px; transform: rotate(-7deg) translate(17px, 12px); animation: welcome-float-left 6s ease-in-out infinite; }
+.welcome-phone-events { z-index: 3; transform: rotate(4deg) translate(-8px, -7px); animation: welcome-float-right 6.5s ease-in-out infinite; }
+.welcome-events-screen { background: linear-gradient(160deg, #101a13, #0b120d 55%, #101b12); }
+.welcome-events-header { min-height: 34px; }
+.welcome-categories { flex: 0 0 auto; }
+.welcome-event-list { min-height: 0; }
+.welcome-event-card {
+  padding: 11px 9px 10px;
+  border: 1px solid rgba(121, 190, 136, .2);
+  border-radius: 17px;
+  background: linear-gradient(135deg, rgba(39, 119, 61, .78), rgba(19, 70, 35, .94));
+  box-shadow: inset 0 1px rgba(255,255,255,.07), 0 7px 18px rgba(0,0,0,.18);
+}
+.welcome-event-card-alt { background: linear-gradient(135deg, rgba(47, 137, 66, .8), rgba(21, 77, 38, .96)); }
+.welcome-mini-odd { display: flex; align-items: center; justify-content: space-between; gap: 3px; padding: 6px 5px; border: 1px solid rgba(225, 255, 231, .12); border-radius: 7px; background: rgba(3, 13, 7, .25); color: rgba(255,255,255,.85); font-size: 7px; }
+.welcome-mini-odd b { color: #b7f4c5; font-size: 8px; }
+.welcome-phone-nav { flex: 0 0 auto; border-top: 1px solid rgba(255,255,255,.06); background: rgba(4, 10, 6, .8); }
+.welcome-phone-nav span { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 16px; line-height: 1; }
+.welcome-phone-nav small { font-size: 7px; }
+.welcome-phone-nav .active { color: #65df8c; }
+.welcome-footer { letter-spacing: .02em; }
+@keyframes welcome-float-left { 0%, 100% { transform: rotate(-7deg) translate(17px, 12px); } 50% { transform: rotate(-5deg) translate(17px, 2px); } }
+@keyframes welcome-float-right { 0%, 100% { transform: rotate(4deg) translate(-8px, -7px); } 50% { transform: rotate(2deg) translate(-8px, 3px); } }
+@media (max-width: 640px) {
+  .welcome-phone { width: clamp(155px, 43vw, 210px); border-radius: 32px; padding: 6px; }
+  .welcome-phone-screen { border-radius: 26px; }
+  .welcome-devices { margin-inline: -7px; }
+  .welcome-phone-promo { margin-right: -35px; transform: rotate(-6deg) translate(5px, 9px); animation-name: welcome-float-left-mobile; }
+  .welcome-phone-events { transform: rotate(4deg) translate(-5px, -5px); animation-name: welcome-float-right-mobile; }
+  .welcome-phone-status { flex-basis: 24px; padding-inline: 12px; }
+  .welcome-event-card { padding: 9px 7px 8px; }
+  @keyframes welcome-float-left-mobile { 0%, 100% { transform: rotate(-6deg) translate(5px, 9px); } 50% { transform: rotate(-4deg) translate(5px, 1px); } }
+  @keyframes welcome-float-right-mobile { 0%, 100% { transform: rotate(4deg) translate(-5px, -5px); } 50% { transform: rotate(2deg) translate(-5px, 3px); } }
+}
+@media (prefers-reduced-motion: reduce) {
+  .welcome-phone { animation: none !important; }
+}
