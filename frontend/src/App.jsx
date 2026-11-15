@@ -392,7 +392,10 @@ export default function App() {
   };
 
   const liveCount = useMemo(() => events.filter((e) => e.isLive === 1).length, [events]);
-  const welcomeMatches = useMemo(() => {
+  const homeFeaturedEvents = useMemo(() => {
+    const preferred = selectedSport === 'All Sports' ? events.filter((event) => event.sport === 'Football') : events.filter((event) => event.sport === selectedSport);
+    return (selectedSport === 'All Sports' && preferred.length === 0 ? events : preferred).slice(0, 3);
+  }, [events, selectedSport]);  const welcomeMatches = useMemo(() => {
     const football = events.filter((event) => event.sport === 'Football').slice(0, 2);
     return football.length ? football : [
       { id: 'welcome-chelsea-bayern', homeTeam: 'Chelsea', awayTeam: 'Bayern', league: 'Top match', status: 'LIVE', isLive: 1, outcomes: [{ selectionName: '1', odds: 3.56 }, { selectionName: 'X', odds: 3.56 }, { selectionName: '2', odds: 3.56 }] },
@@ -653,30 +656,6 @@ export default function App() {
         </div>
       </header>
 
-      {/* MOBILE & TABLET HORIZONTAL SPORT BAR */}
-      <div className="flex lg:hidden shrink-0 items-center gap-1.5 overflow-x-auto border-b border-white/[0.08] bg-[#0e121a] px-3 py-2">
-        {SPORT_LIST.map((sp) => {
-          const isSelected = selectedSport === sp && activeTab !== 'My Bets';
-          return (
-            <button
-              key={sp}
-              onClick={() => {
-                setSelectedSport(sp);
-                if (activeTab === 'My Bets') setActiveTab('Highlights');
-              }}
-              className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition ${
-                isSelected
-                  ? 'border-white/25 bg-white/10 font-semibold text-white'
-                  : 'border-white/[0.06] bg-[#141924] text-slate-400'
-              }`}
-            >
-              <SportLogo name={sp} className="h-3.5 w-3.5" />
-              <span>{sp}</span>
-            </button>
-          );
-        })}
-      </div>
-
       {/* Main 3-Column Layout */}
       <div className="flex flex-1 overflow-hidden">
         {/* DESKTOP LEFT SIDEBAR */}
@@ -724,17 +703,34 @@ export default function App() {
 
         {/* CENTER WORKSPACE */}
         <main className="sports-main flex-1 overflow-y-auto p-3 sm:p-4 pb-20 lg:pb-4 space-y-3.5">
-          <section className="sports-hero relative overflow-hidden rounded-2xl border border-emerald-400/20 px-5 py-5 sm:px-7 sm:py-6">
-            <div className="relative z-10 max-w-xl">
-              <p className="mb-2 flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.22em] text-emerald-300"><span className="live-dot h-2 w-2 rounded-full bg-emerald-400" /> NaijaBet • Sportsbook</p>
-              <h1 className="text-2xl font-black tracking-tight text-white sm:text-3xl">Make every match <span className="text-emerald-300">count.</span></h1>
-              <p className="mt-2 max-w-lg text-xs leading-5 text-slate-300 sm:text-sm">Live odds, big fixtures and your bet slip in one place. Add funds securely from ₦50.</p>
-              <button onClick={() => token ? setDepositOpen(true) : (setAuthMode('register'), setAuthOpen(true))} className="mt-4 rounded-lg bg-emerald-400 px-4 py-2.5 text-xs font-extrabold text-[#062015] transition hover:bg-emerald-300">{token ? 'Fund your wallet' : 'Create your account'}</button>
+          <section className="home-greeting flex items-center justify-between rounded-2xl border px-4 py-4 sm:px-5">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="home-avatar flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-black text-white">{(email.trim()[0] || (token ? 'N' : 'G')).toUpperCase()}</div>
+              <div className="min-w-0"><p className="text-[11px] text-slate-400">Good evening</p><h1 className="truncate text-base font-extrabold text-white sm:text-lg">{email.trim() ? email.split('@')[0] : token ? 'NaijaBet Player' : 'Guest Player'}</h1></div>
             </div>
-            <div aria-hidden="true" className="hero-ball absolute -right-5 -top-16 h-64 w-64 rounded-full border-[24px] border-white/[0.04] sm:right-12 sm:h-80 sm:w-80" />
-            <div aria-hidden="true" className="absolute -right-1 bottom-0 h-32 w-64 bg-gradient-to-t from-emerald-400/10 to-transparent" />
+            <div className="home-greeting-status flex shrink-0 items-center gap-2 rounded-full px-3 py-2 text-[10px] font-bold text-emerald-100"><span className="live-dot h-2 w-2 rounded-full bg-emerald-400" />{liveCount} Live</div>
+          </section>
+          <section className="home-sport-strip flex gap-2 overflow-x-auto pb-1" aria-label="Choose a sport">
+            {['All Sports', 'Football', 'Basketball', 'Tennis', 'Table Tennis', 'Esports'].map((sport) => {
+              const selected = selectedSport === sport;
+              return <button key={sport} onClick={() => setSelectedSport(sport)} className={`home-sport-chip flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-semibold transition ${selected ? 'home-sport-chip-active' : ''}`}><SportLogo name={sport} className="h-4 w-4" /><span>{sport}</span></button>;
+            })}
           </section>
           {paymentNotice && <button onClick={() => setPaymentNotice('')} className="w-full rounded-lg border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-left text-xs text-emerald-100">{paymentNotice}<span className="float-right text-emerald-300">Dismiss ×</span></button>}
+          {activeTab !== 'My Bets' && <section className="home-top-events space-y-3">
+            <div className="flex items-end justify-between px-1"><div><h2 className="text-lg font-extrabold tracking-tight text-white">Top Events</h2><p className="mt-0.5 text-[11px] text-slate-400">Pick a match and add your odds</p></div><button onClick={() => { setActiveTab('Highlights'); setSelectedSport('All Sports'); }} className="text-[11px] font-semibold text-emerald-300 hover:text-emerald-200">View all <span aria-hidden="true">→</span></button></div>
+            {homeFeaturedEvents.length ? <div className="home-event-grid grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">{homeFeaturedEvents.map((ev) => {
+              const cardOutcomes = ev.outcomes.filter((out) => ['1X2', 'Moneyline', 'Winner', 'Bout Winner', 'Match Winner'].includes(out.marketName)).slice(0, 3);
+              const hasScore = ev.homeScore !== null && ev.homeScore !== undefined && ev.awayScore !== null && ev.awayScore !== undefined;
+              return <article className="home-event-card rounded-2xl border p-3.5 sm:p-4" key={ev.id}>
+                <div className="mb-4 flex items-center justify-between"><span className="truncate pr-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-100/75">{ev.league}</span><span className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-extrabold ${ev.isLive === 1 ? 'home-live-label' : 'home-upcoming-label'}`}>{ev.isLive === 1 ? `● ${ev.matchClock || 'LIVE'}` : new Date(ev.kickoffTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></div>
+                <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-center"><div className="flex min-w-0 flex-col items-center gap-2"><ClubLogo name={ev.homeTeam} /><span className="w-full truncate text-[11px] font-bold text-white sm:text-xs">{ev.homeTeam}</span></div><div className="home-score-box rounded-xl px-3 py-2 text-center"><strong className="block text-lg font-black tabular-nums text-white">{hasScore ? `${ev.homeScore} : ${ev.awayScore}` : 'VS'}</strong><span className="block text-[8px] font-semibold uppercase tracking-wide text-slate-400">{ev.isLive === 1 ? 'Live score' : 'Match winner'}</span></div><div className="flex min-w-0 flex-col items-center gap-2"><ClubLogo name={ev.awayTeam} /><span className="w-full truncate text-[11px] font-bold text-white sm:text-xs">{ev.awayTeam}</span></div></div>
+                <div className="mt-4 grid grid-cols-3 gap-1.5">{cardOutcomes.map((out) => { const active = selections.some((selection) => selection.outcomeId === out.id); return <button key={out.id} disabled={out.isSuspended === 1} onClick={() => toggleSelection({ eventId: ev.id, matchName: `${ev.homeTeam} vs ${ev.awayTeam}`, outcomeId: out.id, marketName: out.marketName, selectionName: out.selectionName, odds: out.odds })} className={`home-event-odd disabled:opacity-50 flex min-w-0 flex-col items-center rounded-lg border py-2 text-[10px] tabular-nums transition ${active ? 'home-event-odd-active' : ''}`}><span className="truncate text-slate-400">{out.selectionName}</span><strong className="mt-0.5 text-xs text-white">{Number(out.odds).toFixed(2)}</strong></button>; })}</div>
+                {cardOutcomes.length === 0 && <p className="mt-4 rounded-lg bg-black/15 px-3 py-2 text-center text-[10px] text-slate-400">Markets coming soon</p>}
+              </article>;
+            })}</div> : <div className="home-no-events rounded-2xl border px-4 py-8 text-center text-xs text-slate-400">Featured fixtures will appear here when the event feed is available.</div>}
+          </section>}
+
           <div className="lg:hidden">
             <input
               type="text"
@@ -743,24 +739,6 @@ export default function App() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full rounded-md border border-white/[0.08] bg-[#11151e] px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-slate-500 focus:outline-none"
             />
-          </div>
-
-          <div className="promo-card flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3.5 py-2.5 sm:px-4 sm:py-3">
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-2">
-                <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-300">
-                  Multi Bonus
-                </span>
-                <span className="text-xs font-semibold text-white">Up to 100% Extra Payout on 3+ Legs</span>
-              </div>
-              <p className="hidden sm:block text-[11px] text-slate-400">
-                Combine Football, NBA, Tennis & Esports legs on one ticket for automatic accumulator boosts.
-              </p>
-            </div>
-            <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
-              <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
-              <span>Markets Open</span>
-            </div>
           </div>
 
           {activeTab === 'My Bets' ? (
@@ -1046,7 +1024,7 @@ export default function App() {
                   <div className="welcome-promo-image">
                     <img src={welcomeImage} alt="Footballer featured in NaijaBet" />
                     <div className="welcome-image-shade absolute inset-0" aria-hidden="true" />
-                    <div className="welcome-image-title absolute left-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-2xl px-4 py-3 text-2xl font-black tracking-tight text-white">Bet Naija</div>
+
                   </div>
                   <div className="welcome-promo-bottom flex flex-1 flex-col justify-center px-4 pb-4 pt-3 text-center">
                     <p className="text-[9px] font-extrabold uppercase tracking-[0.2em] text-emerald-300">Your game. Your moment.</p>
