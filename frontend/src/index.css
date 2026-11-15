@@ -105,3 +105,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid #36d980; outline-
 .welcome-image-title { border: 1px solid rgba(142, 246, 171, .58); background: rgba(5, 19, 10, .78); box-shadow: 0 12px 32px rgba(0,0,0,.42), 0 0 24px rgba(32, 184, 111, .2); text-shadow: 0 2px 12px rgba(0,0,0,.5); }
 .welcome-sport-chip { border-color: rgba(172, 220, 180, .2); background: rgba(9, 28, 14, .72); }
 @media (min-width: 1024px) { .welcome-art { border-left-color: rgba(115, 184, 128, .16); } }
+/* Square welcome image crop: keep the player in frame and crop the embedded footer. */
+.welcome-image-card { width: min(100%, 360px); aspect-ratio: 1 / 1; }
+.welcome-image { object-position: center 17%; }
+.welcome-image-title { top: 70%; }

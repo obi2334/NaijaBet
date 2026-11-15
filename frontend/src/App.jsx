@@ -1042,14 +1042,12 @@ export default function App() {
             </div>
             <div className="welcome-art relative flex min-h-[360px] items-center justify-center overflow-hidden sm:min-h-[460px] lg:min-h-full">
               <div className="welcome-stadium-lines absolute inset-0" aria-hidden="true" />
-              <div className="welcome-image-card relative z-10 flex h-[340px] w-full max-w-[260px] items-center justify-center overflow-hidden rounded-3xl sm:h-[500px] sm:max-w-[320px]">
-                <img src={welcomeImage} alt="Footballer in the NaijaBet welcome artwork" className="welcome-image h-full w-full object-contain" />
+              <div className="welcome-image-card relative z-10 aspect-square w-full max-w-[360px] overflow-hidden rounded-3xl">
+                <img src={welcomeImage} alt="Footballer in the NaijaBet welcome artwork" className="welcome-image absolute inset-0 h-full w-full object-cover" />
                 <div className="welcome-image-shade absolute inset-0" aria-hidden="true" />
                 <div className="welcome-image-title absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-2xl px-5 py-3 text-2xl font-black tracking-tight text-white sm:px-7 sm:py-4 sm:text-3xl">Bet Naija</div>
               </div>
-              <div className="welcome-art-caption absolute bottom-5 left-5 right-5 flex flex-wrap items-center justify-center gap-2 sm:bottom-8 sm:left-8 sm:right-8">
-                {['Football', 'Basketball', 'Tennis', 'Esports'].map((sport) => <span key={sport} className="welcome-sport-chip inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-[11px] font-semibold text-slate-100"><SportLogo name={sport} className="h-4 w-4" />{sport}</span>)}
-              </div>
+
             </div>
           </div>
         </section>
