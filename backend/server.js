@@ -54,6 +54,14 @@ updateOutcome.run('1X2','HOME','33333333-3333-3333-3333-333333333347');
 updateOutcome.run('1X2','AWAY','33333333-3333-3333-3333-333333333348');
 updateOutcome.run('Moneyline','HOME','33333333-3333-3333-3333-333333333335');
 updateOutcome.run('Moneyline','AWAY','33333333-3333-3333-3333-333333333336');
+// Repair persisted demo winner rows too: INSERT OR IGNORE above does not fix
+// labels in an existing database. These sports use two sides, so outcome two
+// must stay attached to the away team and must never be shown as a draw.
+for (let i = 4; i < fixtureSelections.length; i++) {
+  const isAway = i % 2 === 1;
+  const outcomeId = `33333333-3333-3333-3333-${String(333333333331 + i).slice(-12)}`;
+  updateOutcome.run(fixtureMarket[i], isAway ? 'AWAY' : 'HOME', outcomeId);
+}
 const demoFootballMarkets = [
   ['22222222-2222-2222-2222-222222222221','1X2','AWAY',3.00],
   ['22222222-2222-2222-2222-222222222222','1X2','DRAW',3.30],
