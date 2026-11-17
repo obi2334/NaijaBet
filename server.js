@@ -4,6 +4,7 @@ import crypto from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import path from 'node:path';
 
 const db = new DatabaseSync(process.env.DATABASE_PATH || './sportsbook.db');
 const app = express();
@@ -375,6 +376,14 @@ app.post('/api/admin/outcomes/:outcomeId/settle',(req,res)=>{
     db.exec('COMMIT');
     return res.json({outcomeId:outcome.id,result,affectedBetLegs:pending.length,wonBets:won,lostBets:lost,voidedBets:voided,creditedMinorUnits:credited});
   }catch(error){try{db.exec('ROLLBACK')}catch{}console.error('Settlement failed:',error);return res.status(500).json({error:'Settlement failed; transaction rolled back.'});}
+});
+
+// Serve the built React app from the same Railway service as the API.
+const frontendDist = path.resolve('frontend/dist');
+app.use(express.static(frontendDist));
+app.get('/{*splat}',(req,res,next)=>{
+  if(req.path.startsWith('/api')) return next();
+  res.sendFile(path.join(frontendDist,'index.html'),(error)=>{if(error)next(error)});
 });
 
 app.listen(PORT,()=>console.log(`NaijaBet API listening on ${PORT}`));
