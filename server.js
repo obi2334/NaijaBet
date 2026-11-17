@@ -11,6 +11,7 @@ const PORT = Number(process.env.PORT || 4000);
 const JWT_SECRET = process.env.JWT_SECRET;
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
 const PAYSTACK_WEBHOOK_SECRET = process.env.PAYSTACK_WEBHOOK_SECRET;
+const ADMIN_API_KEY = process.env.ADMIN_API_KEY || '';
 const APP_URL = process.env.APP_URL || 'http://localhost:5173';
 if (!JWT_SECRET || JWT_SECRET.length < 32) throw new Error('Set JWT_SECRET to a random string of at least 32 characters.');
 
@@ -25,6 +26,9 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS deposits (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, reference TEXT NOT NULL UNIQUE, amount INTEGER NOT NULL CHECK(amount >= 5000), status TEXT NOT NULL DEFAULT 'PENDING' CHECK(status IN ('PENDING','SUCCESS','FAILED')), created_at TEXT DEFAULT CURRENT_TIMESTAMP, paid_at TEXT);
   CREATE TABLE IF NOT EXISTS booking_codes (code TEXT PRIMARY KEY, selections_json TEXT NOT NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP);
 `);
+// Add settlement state to existing bet-leg tables without replacing user data.
+const betLegColumns = db.prepare('PRAGMA table_info(bet_legs)').all().map((column) => column.name);
+if (!betLegColumns.includes('result')) db.exec("ALTER TABLE bet_legs ADD COLUMN result TEXT NOT NULL DEFAULT 'PENDING' CHECK(result IN ('PENDING','WON','LOST','VOID'))");
 // Add sign-in support to databases created by the older email-only schema.
 const userColumns = db.prepare('PRAGMA table_info(users)').all().map((column) => column.name);
 if (!userColumns.includes('password_hash')) db.exec('ALTER TABLE users ADD COLUMN password_hash TEXT');
@@ -317,7 +321,15 @@ app.get('/api/wallet/deposits/:reference',auth,async(req,res)=>{
   res.json({reference:row.reference,amount:row.amount/100,currency:'NGN',status:row.status,createdAt:row.created_at,paidAt:row.paid_at});
 });
 app.get('/api/events',(_req,res)=>{const events=db.prepare("SELECT id,sport,league,home_team AS homeTeam,away_team AS awayTeam,kickoff_time AS kickoffTime,status FROM events WHERE status IN ('UPCOMING','LIVE') ORDER BY kickoff_time").all(),get=db.prepare('SELECT id,market_name AS marketName,selection_name AS selectionName,odds,is_suspended AS isSuspended FROM outcomes WHERE event_id=?');res.json(events.map(e=>({...e,isLive:e.status==='LIVE'?1:0,outcomes:get.all(e.id)})))});
-app.get('/api/bets',auth,(req,res)=>res.json(db.prepare('SELECT id,stake,total_odds AS totalOdds,potential_payout AS potentialPayout,status,created_at AS createdAt FROM bets WHERE user_id=? ORDER BY created_at DESC').all(req.user.userId)));
+app.get('/api/bets',auth,(req,res)=>{
+  const bets=db.prepare('SELECT id,stake,total_odds AS totalOdds,potential_payout AS potentialPayout,status,created_at AS createdAt FROM bets WHERE user_id=? ORDER BY created_at DESC').all(req.user.userId);
+  const getLegs=db.prepare(`SELECT bl.id,bl.event_id AS eventId,bl.outcome_id AS outcomeId,bl.locked_odds AS lockedOdds,bl.result,e.home_team AS homeTeam,e.away_team AS awayTeam,o.market_name AS marketName,o.selection_name AS selectionName
+    FROM bet_legs bl
+    LEFT JOIN events e ON e.id=bl.event_id
+    LEFT JOIN outcomes o ON o.id=bl.outcome_id
+    WHERE bl.bet_id=? ORDER BY bl.rowid`);
+  res.json(bets.map((bet)=>({...bet,legs:getLegs.all(bet.id)})));
+});
 app.post('/api/bets',auth,(req,res)=>{
   const {stake,selections}=req.body||{};if(!Array.isArray(selections)||!selections.length||!Number.isSafeInteger(stake)||stake<=0)return res.status(400).json({error:'Enter a valid stake and select a market.'});
   try{db.exec('BEGIN IMMEDIATE');const w=walletFor(req.user.userId);if(!w)throw Error('WALLET_NOT_FOUND');if(w.balance<stake)throw Error('INSUFFICIENT_FUNDS');let odds=1;const rows=[];
@@ -327,4 +339,42 @@ app.post('/api/bets',auth,(req,res)=>{
 });
 app.post('/api/booking-codes',auth,(req,res)=>{const selections=req.body?.selections;if(!Array.isArray(selections)||!selections.length)return res.status(400).json({error:'Bet slip is empty.'});const code=crypto.randomBytes(5).toString('hex').toUpperCase();db.prepare('INSERT INTO booking_codes(code,selections_json) VALUES(?,?)').run(code,JSON.stringify(selections));res.status(201).json({code})});
 app.get('/api/booking-codes/:code',auth,(req,res)=>{const row=db.prepare('SELECT selections_json FROM booking_codes WHERE code=?').get(req.params.code.toUpperCase());if(!row)return res.status(404).json({error:'Booking code not found.'});res.json({selections:JSON.parse(row.selections_json)})});
+// Admin-only outcome settlement. Keep ADMIN_API_KEY server-side; never expose it to the browser.
+app.post('/api/admin/outcomes/:outcomeId/settle',(req,res)=>{
+  if(!ADMIN_API_KEY)return res.status(503).json({error:'Admin settlement is disabled. Configure ADMIN_API_KEY.'});
+  const supplied=Buffer.from(req.get('x-admin-key')||''),expected=Buffer.from(ADMIN_API_KEY);
+  if(supplied.length!==expected.length||!crypto.timingSafeEqual(supplied,expected))return res.sendStatus(401);
+  const result=String(req.body?.result||'').toUpperCase();
+  if(!['WON','LOST','VOID'].includes(result))return res.status(400).json({error:'Result must be WON, LOST or VOID.'});
+  try{
+    db.exec('BEGIN IMMEDIATE');
+    const outcome=db.prepare('SELECT id FROM outcomes WHERE id=?').get(req.params.outcomeId);
+    if(!outcome){db.exec('ROLLBACK');return res.status(404).json({error:'Outcome not found.'});}
+    const pending=db.prepare("SELECT id FROM bet_legs WHERE outcome_id=? AND result='PENDING'").all(outcome.id);
+    if(!pending.length){db.exec('ROLLBACK');return res.status(409).json({error:'Outcome already settled or has no bets.'});}
+    db.prepare("UPDATE bet_legs SET result=? WHERE outcome_id=? AND result='PENDING'").run(result,outcome.id);
+    const betIds=db.prepare('SELECT DISTINCT bet_id FROM bet_legs WHERE outcome_id=?').all(outcome.id);
+    let won=0,lost=0,voided=0,credited=0;
+    for(const {bet_id} of betIds){
+      const bet=db.prepare('SELECT id,user_id,stake,status FROM bets WHERE id=?').get(bet_id);
+      if(!bet||bet.status!=='PENDING')continue;
+      const legs=db.prepare('SELECT result,locked_odds FROM bet_legs WHERE bet_id=?').all(bet_id);
+      if(legs.some(x=>x.result==='PENDING'))continue;
+      if(legs.some(x=>x.result==='LOST')){
+        db.prepare("UPDATE bets SET status='LOST' WHERE id=? AND status='PENDING'").run(bet_id);lost++;continue;
+      }
+      const allVoid=legs.every(x=>x.result==='VOID');
+      if(allVoid){
+        db.prepare("UPDATE bets SET status='VOID',potential_payout=? WHERE id=? AND status='PENDING'").run(bet.stake,bet_id);
+        db.prepare('UPDATE wallets SET balance=balance+? WHERE user_id=?').run(bet.stake,bet.user_id);voided++;credited+=bet.stake;continue;
+      }
+      const payout=Math.floor(bet.stake*legs.filter(x=>x.result==='WON').reduce((p,x)=>p*Number(x.locked_odds),1));
+      db.prepare("UPDATE bets SET status='WON',potential_payout=? WHERE id=? AND status='PENDING'").run(payout,bet_id);
+      db.prepare('UPDATE wallets SET balance=balance+? WHERE user_id=?').run(payout,bet.user_id);won++;credited+=payout;
+    }
+    db.exec('COMMIT');
+    return res.json({outcomeId:outcome.id,result,affectedBetLegs:pending.length,wonBets:won,lostBets:lost,voidedBets:voided,creditedMinorUnits:credited});
+  }catch(error){try{db.exec('ROLLBACK')}catch{}console.error('Settlement failed:',error);return res.status(500).json({error:'Settlement failed; transaction rolled back.'});}
+});
+
 app.listen(PORT,()=>console.log(`NaijaBet API listening on ${PORT}`));

@@ -1121,7 +1121,7 @@ export default function App() {
                         <div className="mb-3 flex items-center justify-between"><span className="text-[8px] font-bold uppercase tracking-[0.12em] text-emerald-100/75">{match.league || 'Top match'}</span><span className="text-[8px] font-semibold text-white/75">{match.isLive ? '● LIVE' : 'UPCOMING'}</span></div>
                         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1 text-center text-[9px] font-bold text-white"><span>{match.homeTeam}</span><span className="text-sm font-black">{match.isLive ? (index === 0 ? '2 : 1' : '2 : 2') : 'VS'}</span><span>{match.awayTeam}</span></div>
                         <div className="mt-1 text-center text-[7px] text-white/65">{match.isLive ? '1ST HALF 39′' : 'Match winner'}</div>
-                        <div className="mt-3 grid grid-cols-3 gap-1">{matchOutcomes.map((outcome, outcomeIndex) => <span className="welcome-mini-odd" key={outcome.id || outcome.selectionName || outcomeIndex}><small>{displayOutcomeLabel(outcome, event)}</small><b>{Number(outcome.odds).toFixed(2)}</b></span>)}</div>
+                        <div className="mt-3 grid grid-cols-3 gap-1">{matchOutcomes.map((outcome, outcomeIndex) => <span className="welcome-mini-odd" key={outcome.id || outcome.selectionName || outcomeIndex}><small>{displayOutcomeLabel(outcome, match)}</small><b>{Number(outcome.odds).toFixed(2)}</b></span>)}</div>
                       </article>;
                     })}
                   </div>

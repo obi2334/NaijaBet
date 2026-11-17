@@ -46,6 +46,7 @@ for (const [id,sport,league,home,away,hours] of fixtureEvents) addEvent.run(id,s
 const fixtureOdds = [2.45,3.4,2.75,1.95,3.6,3.8,2.15,1.72,1.85,1.95,1.88,1.92,1.65,2.25,1.78,2.02,1.8,2.0];
 const fixtureSelections = ['HOME','DRAW','AWAY','HOME','DRAW','AWAY','1 (HOME)','2 (AWAY)','1 (HOME)','2 (AWAY)','1','2','1','2','1','2','1','2'];
 const fixtureMarket = ['1X2','1X2','1X2','1X2','1X2','1X2','Moneyline','Moneyline','Moneyline','Moneyline','Match Winner','Match Winner','Match Winner','Match Winner','Match Winner','Match Winner','Match Winner','Match Winner'];
+const addOutcome = db.prepare('INSERT OR IGNORE INTO outcomes (id,event_id,market_name,selection_name,odds,is_suspended) VALUES (?,?,?,?,?,0)');
 for (let i=0;i<fixtureOdds.length;i++) addOutcome.run(`33333333-3333-3333-3333-${String(333333333331+i).slice(-12)}`,fixtureEvents[Math.floor(i/2)][0],fixtureMarket[i],fixtureSelections[i],fixtureOdds[i]);
 
 // Complete the football 1X2 demo prices and add clearly sample-only detail markets.
