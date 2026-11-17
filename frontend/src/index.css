@@ -237,3 +237,25 @@ button:focus-visible, input:focus-visible { outline: 2px solid #36d980; outline-
 .event-detail-market, .event-detail-side { border-color: rgba(145, 211, 157, .16); background: rgba(15, 41, 22, .88); }
 .event-detail-odd { border-color: rgba(145, 211, 157, .14); background: rgba(4, 19, 9, .46); }
 .event-detail-odd:hover { border-color: rgba(103, 219, 136, .45); background: rgba(39, 129, 63, .32); }
+
+
+/* Keep league labels and team names readable in narrow match cards. */
+.league-heading { min-width: 0; }
+.league-heading > div { min-width: 0; flex: 1 1 auto; overflow: hidden; }
+.league-heading > div > span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.home-team-name {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: clamp(10px, 2.6vw, 12px);
+  line-height: 1.35;
+}
