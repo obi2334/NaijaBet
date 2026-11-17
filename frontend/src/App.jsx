@@ -320,6 +320,16 @@ const useBetSlipStore = create(
   )
 );
 
+const getLagosGreeting = (date) => {
+  const hour = Number(new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Africa/Lagos', hour: '2-digit', hourCycle: 'h23',
+  }).format(date));
+  if (hour >= 5 && hour < 12) return 'Good morning';
+  if (hour >= 12 && hour < 17) return 'Good afternoon';
+  if (hour >= 17 && hour < 21) return 'Good evening';
+  return 'Good night';
+};
+
 export default function App() {
   const [events, setEvents] = useState([]);
   const [myBets, setMyBets] = useState([]);
@@ -336,6 +346,11 @@ export default function App() {
   const [mobileSlipOpen, setMobileSlipOpen] = useState(false);
   const [token, setToken] = useState(() => localStorage.getItem(AUTH_KEY) || '');
   const [email, setEmail] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [profileName, setProfileName] = useState('');
+  const [profileNameInput, setProfileNameInput] = useState('');
+  const [profileNameError, setProfileNameError] = useState('');
+  const [greetingTime, setGreetingTime] = useState(() => new Date());
   const [authPassword, setAuthPassword] = useState('');
   const [authMode, setAuthMode] = useState('login');
   const [authOpen, setAuthOpen] = useState(false);
@@ -370,6 +385,19 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    const timer = setInterval(() => setGreetingTime(new Date()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!token) return;
+    fetch(`${API_BASE}/api/profile`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((response) => response.ok ? response.json() : Promise.reject())
+      .then((profile) => { setProfileName(profile.name || ''); setProfileNameInput(profile.name || ''); })
+      .catch(() => {});
+  }, [token]);
+
+  useEffect(() => {
     const reference = new URLSearchParams(window.location.search).get('reference');
     if (!token || !reference) return undefined;
     let attempts = 0;
@@ -399,7 +427,7 @@ export default function App() {
       const response = await fetch(`${API_BASE}/api/auth/${authMode === 'register' ? 'register' : 'login'}`, {
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify({ email, password: authPassword }),
+        body: JSON.stringify({ email, password: authPassword, ...(authMode === 'register' ? { name: fullName } : {}) }),
       });
 
       // Check if the response is actually JSON before parsing
@@ -415,6 +443,8 @@ export default function App() {
       
       localStorage.setItem(AUTH_KEY, data.token); 
       setToken(data.token); 
+      setProfileName(data.name || '');
+      setProfileNameInput(data.name || '');
       setBalanceKobo(Number(data.balance || 0));
       setAuthOpen(false); 
       setAuthPassword(''); 
@@ -422,6 +452,24 @@ export default function App() {
       
     } catch (err) { 
       setAuthError(err.message); 
+    }
+  };
+
+  const handleSaveProfileName = async (event) => {
+    event.preventDefault();
+    setProfileNameError('');
+    try {
+      const response = await fetch(`${API_BASE}/api/profile`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ name: profileNameInput }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Could not save your name.');
+      setProfileName(data.name);
+      setProfileNameInput(data.name);
+    } catch (error) {
+      setProfileNameError(error.message);
     }
   };
 
@@ -462,6 +510,7 @@ export default function App() {
   };
 
   const liveCount = useMemo(() => events.filter((e) => e.isLive === 1).length, [events]);
+  const displayName = profileName || (email.trim() ? email.split('@')[0] : token ? 'Player' : 'Guest Player');
   const selectedEvent = events.find((event) => event.id === selectedEventId) || null;
   const selectedEventIsDemo = selectedEvent?.id?.startsWith('22222222-2222-2222-2222-222222222') ?? false;
   const selectedEventOutcomes = (selectedEvent?.outcomes || []).map((outcome) => {
@@ -727,7 +776,7 @@ export default function App() {
             </button>
           </div>
           {token ? (
-            <button onClick={() => { localStorage.removeItem(AUTH_KEY); setToken(''); setEmail(''); setBalanceKobo(0); setMyBets([]); }} className="inline-flex rounded-lg border border-white/10 px-2 py-1.5 text-[10px] font-semibold text-slate-300 hover:bg-white/5 sm:px-3 sm:py-2 sm:text-xs">Sign out</button>
+            <button onClick={() => { localStorage.removeItem(AUTH_KEY); setToken(''); setEmail(''); setProfileName(''); setProfileNameInput(''); setBalanceKobo(0); setMyBets([]); }} className="inline-flex rounded-lg border border-white/10 px-2 py-1.5 text-[10px] font-semibold text-slate-300 hover:bg-white/5 sm:px-3 sm:py-2 sm:text-xs">Sign out</button>
           ) : (
             <button onClick={() => { setAuthMode('login'); setAuthOpen(true); }} className="rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-white/5">Sign in</button>
           )}
@@ -783,11 +832,19 @@ export default function App() {
         <main className="sports-main relative flex-1 overflow-y-auto p-3 sm:p-4 pb-20 lg:pb-4 space-y-3.5">
           <section className="home-greeting flex items-center justify-between rounded-2xl border px-4 py-4 sm:px-5">
             <div className="flex min-w-0 items-center gap-3">
-              <div className="home-avatar flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-black text-white">{(email.trim()[0] || (token ? 'N' : 'G')).toUpperCase()}</div>
-              <div className="min-w-0"><p className="text-[11px] text-slate-400">Good evening</p><h1 className="truncate text-base font-extrabold text-white sm:text-lg">{email.trim() ? email.split('@')[0] : token ? 'NaijaBet Player' : 'Guest Player'}</h1></div>
+              <div className="home-avatar flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-black text-white">{(displayName[0] || 'G').toUpperCase()}</div>
+              <div className="min-w-0"><p className="text-[11px] text-slate-400">{getLagosGreeting(greetingTime)}</p><h1 className="truncate text-base font-extrabold text-white sm:text-lg">{displayName}</h1></div>
             </div>
             <div className="home-greeting-status flex shrink-0 items-center gap-2 rounded-full px-3 py-2 text-[10px] font-bold text-emerald-100"><span className="live-dot h-2 w-2 rounded-full bg-emerald-400" />{liveCount} Live</div>
           </section>
+          {token && !profileName && (
+            <form onSubmit={handleSaveProfileName} className="flex flex-wrap items-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-500/5 p-3">
+              <label htmlFor="profile-full-name" className="text-xs text-slate-300">Add your full name to personalise your greeting</label>
+              <input id="profile-full-name" value={profileNameInput} onChange={(event) => setProfileNameInput(event.target.value)} minLength={2} maxLength={80} required placeholder="Your full name" className="min-w-0 flex-1 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-white outline-none" />
+              {profileNameError && <span className="w-full text-xs text-rose-300">{profileNameError}</span>}
+              <button type="submit" className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white">Save name</button>
+            </form>
+          )}
           {selectedEvent && (
             <section className="event-detail-overlay fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-5" aria-label={`${selectedEvent.homeTeam} versus ${selectedEvent.awayTeam} match details`} role="dialog" aria-modal="true">
               <div className="event-detail-dialog mx-auto h-[94vh] max-h-[900px] w-full max-w-6xl space-y-4 overflow-y-auto rounded-2xl border p-3 sm:p-5">
@@ -1060,7 +1117,13 @@ export default function App() {
         <div className="modal-backdrop fixed inset-0 z-[70] flex items-center justify-center p-4" onClick={() => setAuthOpen(false)}>
           <section role="dialog" aria-modal="true" aria-labelledby="auth-title" className="modal-card w-full max-w-md rounded-2xl border border-white/10 p-6 shadow-2xl" onClick={(event) => event.stopPropagation()}>
             <div className="mb-5 flex items-start justify-between"><div><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-300">NaijaBet account</p><h2 id="auth-title" className="mt-1 text-xl font-extrabold text-white">{authMode === 'register' ? 'Create your account' : 'Welcome back'}</h2></div><button onClick={() => setAuthOpen(false)} className="text-xl leading-none text-slate-400 hover:text-white">×</button></div>
-            <form onSubmit={handleAuth} className="space-y-3"><label className="block text-xs font-semibold text-slate-300">Email address<input autoComplete="email" type="email" required value={email} onChange={(event) => setEmail(event.target.value)} className="form-field mt-1.5 w-full rounded-lg border px-3 py-3 text-sm text-white outline-none" placeholder="you@example.com" /></label><label className="block text-xs font-semibold text-slate-300">Password<input autoComplete={authMode === 'register' ? 'new-password' : 'current-password'} type="password" minLength={8} required value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} className="form-field mt-1.5 w-full rounded-lg border px-3 py-3 text-sm text-white outline-none" placeholder="At least 8 characters" /></label>{authError && <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-200">{authError}</p>}<button className="deposit-button w-full rounded-lg py-3 text-sm font-bold text-white">{authMode === 'register' ? 'Create account' : 'Sign in'}</button></form>
+            <form onSubmit={handleAuth} className="space-y-3">
+              {authMode === 'register' && <label className="block text-xs font-semibold text-slate-300">Full name<input autoComplete="name" type="text" minLength={2} maxLength={80} required value={fullName} onChange={(event) => setFullName(event.target.value)} className="form-field mt-1.5 w-full rounded-lg border px-3 py-3 text-sm text-white outline-none" placeholder="Your first and last name" /></label>}
+              <label className="block text-xs font-semibold text-slate-300">Email address<input autoComplete="email" type="email" required value={email} onChange={(event) => setEmail(event.target.value)} className="form-field mt-1.5 w-full rounded-lg border px-3 py-3 text-sm text-white outline-none" placeholder="you@example.com" /></label>
+              <label className="block text-xs font-semibold text-slate-300">Password<input autoComplete={authMode === 'register' ? 'new-password' : 'current-password'} type="password" minLength={8} required value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} className="form-field mt-1.5 w-full rounded-lg border px-3 py-3 text-sm text-white outline-none" placeholder="At least 8 characters" /></label>
+              {authError && <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-200">{authError}</p>}
+              <button className="deposit-button w-full rounded-lg py-3 text-sm font-bold text-white">{authMode === 'register' ? 'Create account' : 'Sign in'}</button>
+            </form>
             <p className="mt-4 text-center text-xs text-slate-400">{authMode === 'register' ? 'Already have an account?' : 'New to NaijaBet?'} <button onClick={() => { setAuthError(''); setAuthMode(authMode === 'register' ? 'login' : 'register'); }} className="font-bold text-emerald-300">{authMode === 'register' ? 'Sign in' : 'Create an account'}</button></p>
           </section>
         </div>

@@ -259,3 +259,28 @@ button:focus-visible, input:focus-visible { outline: 2px solid #36d980; outline-
   font-size: clamp(10px, 2.6vw, 12px);
   line-height: 1.35;
 }
+
+
+/* Keep match-card team labels balanced and readable at every breakpoint. */
+.home-event-card .home-team-name {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: clamp(10px, 2.6vw, 12px);
+  line-height: 1.3;
+}
+.home-event-card button { min-width: 0; }
+.league-heading { min-width: 0; }
+.league-heading > div { min-width: 0; flex: 1 1 auto; overflow: hidden; }
+.league-heading > div > span:last-child {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
