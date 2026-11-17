@@ -511,6 +511,7 @@ export default function App() {
 
   const liveCount = useMemo(() => events.filter((e) => e.isLive === 1).length, [events]);
   const displayName = profileName || (email.trim() ? email.split('@')[0] : token ? 'Player' : 'Guest Player');
+  const greetingFirstName = displayName.trim().split(/\s+/)[0] || 'Player';
   const selectedEvent = events.find((event) => event.id === selectedEventId) || null;
   const selectedEventIsDemo = selectedEvent?.id?.startsWith('22222222-2222-2222-2222-222222222') ?? false;
   const selectedEventOutcomes = (selectedEvent?.outcomes || []).map((outcome) => {
@@ -833,7 +834,7 @@ export default function App() {
           <section className="home-greeting flex items-center justify-between rounded-2xl border px-4 py-4 sm:px-5">
             <div className="flex min-w-0 items-center gap-3">
               <div className="home-avatar flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-black text-white">{(displayName[0] || 'G').toUpperCase()}</div>
-              <div className="min-w-0"><p className="text-[11px] text-slate-400">{getLagosGreeting(greetingTime)}</p><h1 className="truncate text-base font-extrabold text-white sm:text-lg">{displayName}</h1></div>
+              <div className="min-w-0"><p className="truncate text-base font-extrabold text-white sm:text-lg">{getLagosGreeting(greetingTime)}, {greetingFirstName}</p></div>
             </div>
             <div className="home-greeting-status flex shrink-0 items-center gap-2 rounded-full px-3 py-2 text-[10px] font-bold text-emerald-100"><span className="live-dot h-2 w-2 rounded-full bg-emerald-400" />{liveCount} Live</div>
           </section>

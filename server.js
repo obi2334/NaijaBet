@@ -33,6 +33,7 @@ if (!betLegColumns.includes('result')) db.exec("ALTER TABLE bet_legs ADD COLUMN 
 // Add sign-in support to databases created by the older email-only schema.
 const userColumns = db.prepare('PRAGMA table_info(users)').all().map((column) => column.name);
 if (!userColumns.includes('password_hash')) db.exec('ALTER TABLE users ADD COLUMN password_hash TEXT');
+if (!userColumns.includes('name')) db.exec('ALTER TABLE users ADD COLUMN name TEXT');
 
 // Demo fixtures for a new database.
 const fixtureEvents = [
@@ -280,12 +281,44 @@ app.use(express.json({limit:'100kb'}));
 app.use(cors({origin:(process.env.CORS_ORIGIN||'http://localhost:5173').split(',')}));
 
 app.post('/api/auth/register',async(req,res)=>{
-  const email=String(req.body?.email||'').trim().toLowerCase(),password=String(req.body?.password||'');
+  const name=String(req.body?.name||'').trim().replace(/\s+/g,' ');
+  const email=String(req.body?.email||'').trim().toLowerCase();
+  const password=String(req.body?.password||'');
+  if(name.length<2||name.length>80)return res.status(400).json({error:'Enter your name (2–80 characters).'});
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||password.length<8||password.length>200)return res.status(400).json({error:'Enter a valid email and a password of at least 8 characters.'});
-  const id=crypto.randomUUID();try{const hash=await bcrypt.hash(password,12);db.exec('BEGIN IMMEDIATE');db.prepare('INSERT INTO users(id,email,password_hash) VALUES(?,?,?)').run(id,email,hash);db.prepare("INSERT INTO wallets(user_id,balance,currency) VALUES(?,0,'NGN')").run(id);db.exec('COMMIT');res.status(201).json({token:jwt.sign({userId:id,email},JWT_SECRET,{expiresIn:'7d'}),userId:id,email,balance:0})}
-  catch{try{db.exec('ROLLBACK')}catch{}res.status(409).json({error:'That email already has an account.'})}
+  const id=crypto.randomUUID();
+  try{
+    const hash=await bcrypt.hash(password,12);
+    db.exec('BEGIN IMMEDIATE');
+    db.prepare('INSERT INTO users(id,email,password_hash,name) VALUES(?,?,?,?)').run(id,email,hash,name);
+    db.prepare("INSERT INTO wallets(user_id,balance,currency) VALUES(?,0,'NGN')").run(id);
+    db.exec('COMMIT');
+    res.status(201).json({token:jwt.sign({userId:id,email},JWT_SECRET,{expiresIn:'7d'}),userId:id,email,name,balance:0});
+  }catch(error){
+    try{db.exec('ROLLBACK')}catch{}
+    if(error?.code==='SQLITE_CONSTRAINT_UNIQUE'||String(error?.message||'').includes('UNIQUE constraint failed'))return res.status(409).json({error:'That email already has an account. Please sign in instead.'});
+    console.error('Registration failed:',error);
+    return res.status(500).json({error:'We could not create your account. Please try again.'});
+  }
 });
-app.post('/api/auth/login',async(req,res)=>{const email=String(req.body?.email||'').trim().toLowerCase(),u=db.prepare('SELECT id,email,password_hash FROM users WHERE email=?').get(email);if(!u?.password_hash||!(await bcrypt.compare(String(req.body?.password||''),u.password_hash)))return res.status(401).json({error:'Email or password is incorrect.'});res.json({token:jwt.sign({userId:u.id,email:u.email},JWT_SECRET,{expiresIn:'7d'}),userId:u.id,email:u.email,balance:walletFor(u.id)?.balance||0})});
+app.post('/api/auth/login',async(req,res)=>{
+  const email=String(req.body?.email||'').trim().toLowerCase();
+  const u=db.prepare('SELECT id,email,password_hash,name FROM users WHERE email=?').get(email);
+  if(!u?.password_hash||!(await bcrypt.compare(String(req.body?.password||''),u.password_hash)))return res.status(401).json({error:'Email or password is incorrect.'});
+  res.json({token:jwt.sign({userId:u.id,email:u.email},JWT_SECRET,{expiresIn:'7d'}),userId:u.id,email:u.email,name:u.name||'',balance:walletFor(u.id)?.balance||0});
+});
+app.get('/api/profile',auth,(req,res)=>{
+  const user=db.prepare('SELECT id,email,name FROM users WHERE id=?').get(req.user.userId);
+  if(!user)return res.status(404).json({error:'Account not found.'});
+  res.json({userId:user.id,email:user.email,name:user.name||''});
+});
+app.patch('/api/profile',auth,(req,res)=>{
+  const name=String(req.body?.name||'').trim().replace(/\s+/g,' ');
+  if(name.length<2||name.length>80)return res.status(400).json({error:'Enter a name between 2 and 80 characters.'});
+  const result=db.prepare('UPDATE users SET name=? WHERE id=?').run(name,req.user.userId);
+  if(!result.changes)return res.status(404).json({error:'Account not found.'});
+  res.json({name});
+});
 app.get('/api/wallet',auth,(req,res)=>{const w=walletFor(req.user.userId);if(!w)return res.status(404).json({error:'Wallet not found.'});res.json({balance:w.balance,balanceKobo:w.balance,currency:'NGN',minimumDeposit:50})});
 app.post('/api/wallet/deposits',auth,async(req,res)=>{
   if(!PAYSTACK_SECRET_KEY)return res.status(503).json({error:'Deposits are not configured. Add PAYSTACK_SECRET_KEY to the server environment.'});
